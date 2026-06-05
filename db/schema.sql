@@ -1,0 +1,1 @@
+-- Shield AI MVP currently uses JSON file storage in data/.
