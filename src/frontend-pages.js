@@ -212,9 +212,9 @@ export function renderLandingPage() {
 
 export function renderGeneratePage() {
   return renderAppShell({
-    title: "Generate Preview",
-    heading: "Create a Free Preview",
-    subheading: "Submit normalized creator input and generate your preview artifact.",
+    title: "Analizza il Profilo — Shield AI",
+    heading: "Analizza il tuo Profilo",
+    subheading: "Inserisci i dati del tuo profilo TikTok per ricevere un'analisi AI istantanea.",
     body: `
       <section class="card">
         <form id="generate-form">
@@ -224,15 +224,15 @@ export function renderGeneratePage() {
               <input id="userId" name="userId" required placeholder="user-123" />
             </div>
             <div>
-              <label for="username">TikTok Username</label>
+              <label for="username">Username TikTok</label>
               <input id="username" name="username" required placeholder="creator_name" />
             </div>
             <div>
-              <label for="language">Language</label>
-              <input id="language" name="language" value="en" required />
+              <label for="language">Lingua dei contenuti</label>
+              <input id="language" name="language" value="it" required />
             </div>
             <div>
-              <label for="creatorLevel">Creator Level</label>
+              <label for="creatorLevel">Livello creator</label>
               <select id="creatorLevel" name="creatorLevel">
                 <option value="beginner">beginner</option>
                 <option value="active" selected>active</option>
@@ -240,23 +240,23 @@ export function renderGeneratePage() {
               </select>
             </div>
             <div>
-              <label for="primaryGoal">Primary Goal</label>
+              <label for="primaryGoal">Obiettivo principale</label>
               <select id="primaryGoal" name="primaryGoal">
                 <option value="views">views</option>
                 <option value="followers" selected>followers</option>
-                <option value="clients">clients</option>
-                <option value="consistency">consistency</option>
+                <option value="clients">clienti</option>
+                <option value="consistency">consistenza</option>
               </select>
             </div>
             <div>
-              <label for="niche">Niche</label>
-              <input id="niche" name="niche" required placeholder="fitness, SaaS, productivity..." />
+              <label for="niche">Nicchia</label>
+              <input id="niche" name="niche" required placeholder="fitness, SaaS, produttività…" />
             </div>
           </div>
-          <label for="bio">Bio</label>
-          <textarea id="bio" name="bio" rows="3" required placeholder="What does this creator post and for whom?"></textarea>
+          <label for="bio">Bio attuale</label>
+          <textarea id="bio" name="bio" rows="3" required placeholder="Di cosa parli e per chi crei contenuti?"></textarea>
           <div class="actions">
-            <button class="primary" type="submit">Generate Preview</button>
+            <button class="primary" type="submit">Analizza il Profilo →</button>
           </div>
           <p id="generate-error" class="error"></p>
         </form>
@@ -264,57 +264,41 @@ export function renderGeneratePage() {
       <script>
         const form = document.getElementById("generate-form");
         const errorEl = document.getElementById("generate-error");
-        const queryPath = new URLSearchParams(location.search).get("path");
 
-        form.addEventListener("submit", async (event) => {
+        form.addEventListener("submit", function (event) {
           event.preventDefault();
           errorEl.textContent = "";
           const formData = new FormData(form);
 
           const userId = String(formData.get("userId")).trim();
           const username = String(formData.get("username")).trim().replace(/^@/, "");
-          const payload = {
-            userId,
-            idempotencyKey: "preview:" + Date.now() + ":" + Math.floor(Math.random() * 1e6),
-            path: queryPath,
-            creatorInput: {
-              source: "guided_fallback",
-              profile: {
-                username,
-                profileUrl: "https://www.tiktok.com/@" + username,
-                bio: String(formData.get("bio")).trim(),
-                language: String(formData.get("language")).trim(),
-                creatorLevel: String(formData.get("creatorLevel"))
-              },
-              strategy: {
-                niche: String(formData.get("niche")).trim(),
-                primaryGoal: String(formData.get("primaryGoal"))
-              },
-              contentSignals: {
-                recentExamples: [],
-                bestExamples: []
-              },
-              metadata: {
-                submittedAt: new Date().toISOString(),
-                schemaVersion: "v1"
-              }
+          const creatorInput = {
+            source: "guided_fallback",
+            profile: {
+              username,
+              profileUrl: "https://www.tiktok.com/@" + username,
+              bio: String(formData.get("bio")).trim(),
+              language: String(formData.get("language")).trim(),
+              creatorLevel: String(formData.get("creatorLevel"))
+            },
+            strategy: {
+              niche: String(formData.get("niche")).trim(),
+              primaryGoal: String(formData.get("primaryGoal"))
+            },
+            contentSignals: {
+              recentExamples: [],
+              bestExamples: []
+            },
+            metadata: {
+              submittedAt: new Date().toISOString(),
+              schemaVersion: "v1"
             }
           };
 
           try {
-            const response = await fetch("/api/generate-preview", {
-              method: "POST",
-              headers: {
-                "content-type": "application/json",
-                "x-session-id": window.__shiaSessionId || ""
-              },
-              body: JSON.stringify(payload)
-            });
-            const body = await response.json();
-            if (!response.ok) {
-              throw new Error(body?.error?.message || "Preview generation failed");
-            }
-            location.assign("/preview/" + encodeURIComponent(body.id) + "?userId=" + encodeURIComponent(userId));
+            sessionStorage.setItem("shieldCreatorInput", JSON.stringify(creatorInput));
+            sessionStorage.setItem("shieldUserId", userId);
+            location.assign("/analyze");
           } catch (error) {
             errorEl.textContent = error.message;
           }
