@@ -501,6 +501,191 @@ export function renderSprintPage({ sprint }) {
   });
 }
 
+export function renderAnalyzePage() {
+  const circum = Math.round(2 * Math.PI * 80); // 503 — circonferenza anello SVG r=80
+  return renderAppShell({
+    title: "Analisi Profilo — Shield AI",
+    heading: "Analisi del Profilo",
+    subheading: "Carico la tua analisi AI…",
+    body: `
+      <canvas id="nn-canvas" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:0.5;"></canvas>
+      <style>
+        .wrap { position: relative; z-index: 1; }
+        .score-ring-wrap { display:flex;justify-content:center;margin:0.5rem 0 1.4rem; }
+        .score-ring-wrap svg { width:min(220px,55vw);height:min(220px,55vw); }
+        .ring-bg   { fill:none;stroke:#e0d5c5;stroke-width:14; }
+        .ring-fill { fill:none;stroke:var(--accent);stroke-width:14;stroke-linecap:round;
+          stroke-dasharray:${circum};stroke-dashoffset:${circum};
+          transition:stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1);
+          transform:rotate(-90deg);transform-origin:center; }
+        .ring-score { font-family:"Fraunces",serif;font-size:2.6rem;fill:var(--ink);text-anchor:middle; }
+        .ring-lbl   { font-family:"Space Grotesk",sans-serif;font-size:0.7rem;fill:#6c4e32;text-anchor:middle;text-transform:uppercase;letter-spacing:.08em; }
+        .col-green  { border-left:4px solid #16a34a; }
+        .col-orange { border-left:4px solid #ea580c; }
+        .col-blue   { border-left:4px solid #2563eb; }
+        .kicker-green  { color:#166534; }
+        .kicker-orange { color:#92400e; }
+        .kicker-blue   { color:#1e40af; }
+        .bio-box { background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:.9rem 1rem;font-style:italic; }
+        #loading-wrap { text-align:center;padding:2rem 0; }
+        .spinner { display:inline-block;width:36px;height:36px;border:4px solid #e0d5c5;border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin-top:1rem; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        #dashboard { display:none; }
+      </style>
+
+      <div id="loading-wrap">
+        <p class="muted">Analisi AI in corso…</p>
+        <div class="spinner"></div>
+      </div>
+      <p id="analyze-error" class="error"></p>
+
+      <div id="dashboard">
+        <div class="score-ring-wrap">
+          <svg viewBox="0 0 200 200">
+            <circle class="ring-bg"   cx="100" cy="100" r="80" />
+            <circle id="ring-fill" class="ring-fill" cx="100" cy="100" r="80" />
+            <text id="score-num" class="ring-score" x="100" y="104" dominant-baseline="middle">0</text>
+            <text class="ring-lbl" x="100" y="130">/100 Growth Score</text>
+          </svg>
+        </div>
+        <section class="card">
+          <p class="kicker">Verdetto AI</p>
+          <p id="verdict-text" class="muted">—</p>
+        </section>
+        <div class="split">
+          <article class="card col-green">
+            <p class="kicker kicker-green">Forze</p>
+            <ul id="forze-list"></ul>
+          </article>
+          <article class="card col-orange">
+            <p class="kicker kicker-orange">Da migliorare</p>
+            <ul id="errori-list"></ul>
+          </article>
+          <article class="card col-blue">
+            <p class="kicker kicker-blue">Occasioni</p>
+            <ul id="opportunita-list"></ul>
+          </article>
+        </div>
+        <section class="card">
+          <p class="kicker">Bio suggerita</p>
+          <p id="bio-box" class="bio-box">—</p>
+        </section>
+        <div class="actions">
+          <a class="chip" href="/generate">Genera il tuo piano</a>
+        </div>
+      </div>
+
+      <script>
+        /* ── neural-network canvas ── */
+        (function () {
+          const canvas = document.getElementById("nn-canvas");
+          const ctx = canvas.getContext("2d");
+          const N = 38, DIST = 150;
+          let nodes = [];
+          function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+          function init() {
+            nodes = Array.from({ length: N }, () => ({
+              x: Math.random() * innerWidth,
+              y: Math.random() * innerHeight,
+              vx: (Math.random() - .5) * .45,
+              vy: (Math.random() - .5) * .45,
+              r: 2 + Math.random() * 1.5
+            }));
+          }
+          function tick() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (const n of nodes) {
+              n.x += n.vx; n.y += n.vy;
+              if (n.x < 0 || n.x > canvas.width) n.vx *= -1;
+              if (n.y < 0 || n.y > canvas.height) n.vy *= -1;
+            }
+            for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) {
+              const dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
+              const d = Math.sqrt(dx * dx + dy * dy);
+              if (d < DIST) {
+                ctx.beginPath();
+                ctx.strokeStyle = "rgba(193,61,42," + (1 - d / DIST) * .15 + ")";
+                ctx.lineWidth = .8;
+                ctx.moveTo(nodes[i].x, nodes[i].y);
+                ctx.lineTo(nodes[j].x, nodes[j].y);
+                ctx.stroke();
+              }
+            }
+            for (const n of nodes) {
+              ctx.beginPath();
+              ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+              ctx.fillStyle = "rgba(193,61,42,.22)";
+              ctx.fill();
+            }
+            requestAnimationFrame(tick);
+          }
+          resize(); init(); tick();
+          window.addEventListener("resize", resize);
+        })();
+
+        /* ── analyze logic ── */
+        (function () {
+          const loadingWrap = document.getElementById("loading-wrap");
+          const dashboard   = document.getElementById("dashboard");
+          const errorEl     = document.getElementById("analyze-error");
+          const CIRCUM = ${circum};
+
+          function esc(s) {
+            return String(s).replace(/[<>&"']/g, c =>
+              ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&#39;" }[c]));
+          }
+          function setList(id, arr) {
+            document.getElementById(id).innerHTML =
+              (Array.isArray(arr) ? arr : []).map(v => "<li>" + esc(v) + "</li>").join("");
+          }
+          function animateScore(score) {
+            const ring = document.getElementById("ring-fill");
+            const num  = document.getElementById("score-num");
+            score = Math.max(0, Math.min(100, score || 0));
+            ring.style.strokeDashoffset = CIRCUM * (1 - score / 100);
+            let cur = 0;
+            const step = score / 60;
+            const iv = setInterval(() => {
+              cur = Math.min(cur + step, score);
+              num.textContent = Math.round(cur);
+              if (cur >= score) clearInterval(iv);
+            }, 16);
+          }
+
+          async function load() {
+            try {
+              const raw    = sessionStorage.getItem("shieldCreatorInput");
+              const userId = sessionStorage.getItem("shieldUserId");
+              if (!raw || !userId) throw new Error("Dati mancanti in sessionStorage — torna a /generate.");
+              const creatorInput = JSON.parse(raw);
+              const res  = await fetch("/api/analyze", {
+                method: "POST",
+                headers: { "content-type": "application/json", "x-session-id": window.__shiaSessionId || "" },
+                body: JSON.stringify({ userId, creatorInput })
+              });
+              const data = await res.json();
+              if (!res.ok) throw new Error(data?.error?.message || "Analisi fallita");
+
+              loadingWrap.style.display = "none";
+              dashboard.style.display   = "";
+              animateScore(data.growth_score);
+              document.getElementById("verdict-text").textContent = data.score_explanation || "—";
+              setList("forze-list",       data.punti_di_forza);
+              setList("errori-list",      data.errori_principali);
+              setList("opportunita-list", data.opportunita);
+              document.getElementById("bio-box").textContent = data.suggerimento_bio || "—";
+            } catch (err) {
+              loadingWrap.style.display = "none";
+              errorEl.textContent = err.message;
+            }
+          }
+          load();
+        })();
+      </script>
+    `
+  });
+}
+
 export function renderDashboardPage({ userId, previews, payments, sprints }) {
   return renderAppShell({
     title: "Dashboard",

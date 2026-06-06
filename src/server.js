@@ -9,6 +9,7 @@ import { GenerationService } from "./generation.js";
 import { validateNormalizedCreatorInput } from "./contracts.js";
 import { AlertingService } from "./alerting.js";
 import {
+  renderAnalyzePage,
   renderDashboardPage,
   renderGeneratePage,
   renderLandingPage,
@@ -182,6 +183,10 @@ app.get("/", (_req, res) => {
     }
   });
   res.type("html").send(renderLandingPage());
+});
+
+app.get("/analyze", (_req, res) => {
+  res.type("html").send(renderAnalyzePage());
 });
 
 app.get("/generate", (_req, res) => {
@@ -568,6 +573,29 @@ app.post(
     });
 
     return res.status(201).json({ ...saved, reused: false });
+  })
+);
+
+app.post(
+  "/api/analyze",
+  asyncHandler(async (req, res) => {
+    const userId = req.body?.userId;
+    const creatorInput = req.body?.creatorInput;
+    if (!userId || !creatorInput) {
+      throw new ApiError(400, "validation_error", "userId and creatorInput are required");
+    }
+    validateNormalizedCreatorInput(creatorInput);
+    let result;
+    try {
+      result = await generation.generateAnalysis(creatorInput);
+    } catch (error) {
+      await alerting.notifyFailure("analysis_generation_failed", {
+        userId,
+        error: error.message
+      });
+      throw error;
+    }
+    return res.json({ ...result.output, generationMeta: result.generationMeta });
   })
 );
 
