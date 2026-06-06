@@ -502,188 +502,336 @@ export function renderSprintPage({ sprint }) {
 }
 
 export function renderAnalyzePage() {
-  const circum = Math.round(2 * Math.PI * 80); // 503 — circonferenza anello SVG r=80
-  return renderAppShell({
-    title: "Analisi Profilo — Shield AI",
-    heading: "Analisi del Profilo",
-    subheading: "Carico la tua analisi AI…",
-    body: `
-      <canvas id="nn-canvas" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:0.5;"></canvas>
-      <style>
-        .wrap { position: relative; z-index: 1; }
-        .score-ring-wrap { display:flex;justify-content:center;margin:0.5rem 0 1.4rem; }
-        .score-ring-wrap svg { width:min(220px,55vw);height:min(220px,55vw); }
-        .ring-bg   { fill:none;stroke:#e0d5c5;stroke-width:14; }
-        .ring-fill { fill:none;stroke:var(--accent);stroke-width:14;stroke-linecap:round;
-          stroke-dasharray:${circum};stroke-dashoffset:${circum};
-          transition:stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1);
-          transform:rotate(-90deg);transform-origin:center; }
-        .ring-score { font-family:"Fraunces",serif;font-size:2.6rem;fill:var(--ink);text-anchor:middle; }
-        .ring-lbl   { font-family:"Space Grotesk",sans-serif;font-size:0.7rem;fill:#6c4e32;text-anchor:middle;text-transform:uppercase;letter-spacing:.08em; }
-        .col-green  { border-left:4px solid #16a34a; }
-        .col-orange { border-left:4px solid #ea580c; }
-        .col-blue   { border-left:4px solid #2563eb; }
-        .kicker-green  { color:#166534; }
-        .kicker-orange { color:#92400e; }
-        .kicker-blue   { color:#1e40af; }
-        .bio-box { background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:.9rem 1rem;font-style:italic; }
-        #loading-wrap { text-align:center;padding:2rem 0; }
-        .spinner { display:inline-block;width:36px;height:36px;border:4px solid #e0d5c5;border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin-top:1rem; }
-        @keyframes spin { to { transform:rotate(360deg); } }
-        #dashboard { display:none; }
-      </style>
+  return `<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Analisi Profilo — Shield AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-display@600,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:  #faf7f2;
+      --bg2: #f3ede3;
+      --ink:  #1a120b;
+      --ink2: #4a3728;
+      --ink3: #8a6f5e;
+      --line: #e0d4c3;
+      --green:  #166534;
+      --orange: #9a3412;
+      --blue:   #1e40af;
+      --a1: #c13d2a;
+      --a2: #f59e0b;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: "Plus Jakarta Sans", sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
+    #nn { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+    .page { position: relative; z-index: 1; width: min(880px, 94vw); margin: 0 auto; padding: 2.5rem 0 5rem; }
 
-      <div id="loading-wrap">
-        <p class="muted">Analisi AI in corso…</p>
-        <div class="spinner"></div>
+    /* header */
+    .hdr { display: flex; align-items: center; gap: .75rem; margin-bottom: 2.8rem; }
+    .logo-sq {
+      width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--a1) 0%, var(--a2) 100%);
+      display: grid; place-items: center;
+      font-family: "Clash Display", sans-serif; font-weight: 700; font-size: 1.1rem; color: #fff;
+    }
+    .logo-name { font-family: "Clash Display", sans-serif; font-weight: 700; font-size: 1.25rem; letter-spacing: -.02em; }
+
+    /* loading */
+    #loading { text-align: center; padding: 5rem 0; }
+    .loading-txt { font-size: .95rem; font-weight: 500; color: var(--ink3); }
+    .spinner {
+      width: 38px; height: 38px;
+      border: 3px solid var(--line); border-top-color: var(--a1);
+      border-radius: 50%; animation: spin .7s linear infinite; margin: 1.5rem auto 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* error */
+    .err { color: #991b1b; font-weight: 600; font-size: .95rem; text-align: center; min-height: 1.5rem; padding: .4rem 0; }
+
+    /* dashboard */
+    #dash { display: none; }
+    .dash-title {
+      font-family: "Clash Display", sans-serif; font-weight: 700;
+      font-size: clamp(1.7rem, 4vw, 2.5rem); letter-spacing: -.03em; margin-bottom: .3rem;
+    }
+    .dash-sub { font-size: .9rem; font-weight: 500; color: var(--ink3); margin-bottom: 2.2rem; }
+
+    /* ring */
+    .ring-wrap { display: flex; flex-direction: column; align-items: center; margin-bottom: 2rem; }
+    .ring-outer {
+      --pct: 0;
+      width: 210px; height: 210px; border-radius: 50%;
+      background: conic-gradient(
+        from -90deg,
+        var(--a1) 0%,
+        var(--a2) calc(var(--pct) * 1%),
+        var(--line) calc(var(--pct) * 1%) 100%
+      );
+      display: grid; place-items: center;
+    }
+    .ring-inner {
+      width: 164px; height: 164px; border-radius: 50%; background: var(--bg);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .1rem;
+    }
+    .ring-num {
+      font-family: "Clash Display", sans-serif; font-weight: 700;
+      font-size: 3.2rem; line-height: 1; letter-spacing: -.05em;
+    }
+    .ring-lbl { font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--ink3); }
+
+    /* verdict */
+    .verdict { text-align: center; max-width: 58ch; margin: .5rem auto 2.5rem; }
+    .kicker { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--ink3); margin-bottom: .5rem; }
+    .verdict-body { font-size: 1.05rem; line-height: 1.6; color: var(--ink2); font-weight: 500; }
+
+    /* divider */
+    hr { border: none; border-top: 1px solid var(--line); margin: 0 0 2rem; }
+
+    /* 3 cols */
+    .three-col { display: grid; grid-template-columns: repeat(3, 1fr); margin-bottom: 2.5rem; }
+    .col { padding: 0 1.6rem; }
+    .col:first-child { padding-left: 0; }
+    .col:last-child  { padding-right: 0; }
+    .col + .col { border-left: 1px solid var(--line); }
+    .col-kicker { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; margin-bottom: .9rem; }
+    .ck-green  { color: var(--green); }
+    .ck-orange { color: var(--orange); }
+    .ck-blue   { color: var(--blue); }
+    .col ul { list-style: none; display: flex; flex-direction: column; gap: .6rem; }
+    .col li { font-size: .91rem; line-height: 1.45; color: var(--ink2); font-weight: 500; padding-left: 1.05rem; position: relative; }
+    .col li::before { content: "•"; position: absolute; left: 0; font-weight: 900; }
+    .col-green  li::before { color: var(--green); }
+    .col-orange li::before { color: var(--orange); }
+    .col-blue   li::before { color: var(--blue); }
+    @media (max-width: 600px) {
+      .three-col { grid-template-columns: 1fr; }
+      .col + .col { border-left: none; border-top: 1px solid var(--line); padding: 1.5rem 0 0; margin-top: 1.5rem; }
+    }
+
+    /* bio */
+    .bio-section { margin-bottom: 2.2rem; }
+    .bio-box {
+      font-size: 1rem; font-style: italic; font-weight: 500; line-height: 1.55; color: var(--ink);
+      padding: 1rem 1.25rem; background: var(--bg2); border-left: 3px solid var(--a1); border-radius: 0 8px 8px 0;
+    }
+
+    /* cta */
+    .cta-row { display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; }
+    .btn-primary {
+      display: inline-block; text-decoration: none;
+      background: linear-gradient(135deg, var(--a1) 0%, #df6a3c 100%);
+      color: #fff; font-family: "Plus Jakarta Sans", sans-serif; font-weight: 700;
+      font-size: .95rem; padding: .75rem 1.6rem; border-radius: 999px; transition: opacity .15s;
+    }
+    .btn-primary:hover { opacity: .85; }
+    .btn-ghost { font-size: .88rem; color: var(--ink3); text-decoration: none; font-weight: 500; }
+    .btn-ghost:hover { color: var(--ink); }
+  </style>
+</head>
+<body>
+
+<canvas id="nn"></canvas>
+
+<div class="page">
+
+  <header class="hdr">
+    <div class="logo-sq">S</div>
+    <span class="logo-name">Shield AI</span>
+  </header>
+
+  <div id="loading">
+    <p class="loading-txt">Analisi AI in corso…</p>
+    <div class="spinner"></div>
+  </div>
+  <p id="err" class="err"></p>
+
+  <div id="dash">
+    <p class="dash-title">Analisi del Profilo</p>
+    <p class="dash-sub">Risultati generati da Shield AI</p>
+
+    <div class="ring-wrap">
+      <div class="ring-outer" id="ring-outer">
+        <div class="ring-inner">
+          <span class="ring-num" id="score-num">0</span>
+          <span class="ring-lbl">Growth Score</span>
+        </div>
       </div>
-      <p id="analyze-error" class="error"></p>
+    </div>
 
-      <div id="dashboard">
-        <div class="score-ring-wrap">
-          <svg viewBox="0 0 200 200">
-            <circle class="ring-bg"   cx="100" cy="100" r="80" />
-            <circle id="ring-fill" class="ring-fill" cx="100" cy="100" r="80" />
-            <text id="score-num" class="ring-score" x="100" y="104" dominant-baseline="middle">0</text>
-            <text class="ring-lbl" x="100" y="130">/100 Growth Score</text>
-          </svg>
-        </div>
-        <section class="card">
-          <p class="kicker">Verdetto AI</p>
-          <p id="verdict-text" class="muted">—</p>
-        </section>
-        <div class="split">
-          <article class="card col-green">
-            <p class="kicker kicker-green">Forze</p>
-            <ul id="forze-list"></ul>
-          </article>
-          <article class="card col-orange">
-            <p class="kicker kicker-orange">Da migliorare</p>
-            <ul id="errori-list"></ul>
-          </article>
-          <article class="card col-blue">
-            <p class="kicker kicker-blue">Occasioni</p>
-            <ul id="opportunita-list"></ul>
-          </article>
-        </div>
-        <section class="card">
-          <p class="kicker">Bio suggerita</p>
-          <p id="bio-box" class="bio-box">—</p>
-        </section>
-        <div class="actions">
-          <a class="chip" href="/generate">Genera il tuo piano</a>
-        </div>
+    <div class="verdict">
+      <p class="kicker">Verdetto AI</p>
+      <p class="verdict-body" id="verdict-text">—</p>
+    </div>
+
+    <hr>
+
+    <div class="three-col">
+      <div class="col col-green">
+        <p class="col-kicker ck-green">Forze</p>
+        <ul id="forze-list"></ul>
       </div>
+      <div class="col col-orange">
+        <p class="col-kicker ck-orange">Da migliorare</p>
+        <ul id="errori-list"></ul>
+      </div>
+      <div class="col col-blue">
+        <p class="col-kicker ck-blue">Occasioni</p>
+        <ul id="opportunita-list"></ul>
+      </div>
+    </div>
 
-      <script>
-        /* ── neural-network canvas ── */
-        (function () {
-          const canvas = document.getElementById("nn-canvas");
-          const ctx = canvas.getContext("2d");
-          const N = 38, DIST = 150;
-          let nodes = [];
-          function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
-          function init() {
-            nodes = Array.from({ length: N }, () => ({
-              x: Math.random() * innerWidth,
-              y: Math.random() * innerHeight,
-              vx: (Math.random() - .5) * .45,
-              vy: (Math.random() - .5) * .45,
-              r: 2 + Math.random() * 1.5
-            }));
-          }
-          function tick() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            for (const n of nodes) {
-              n.x += n.vx; n.y += n.vy;
-              if (n.x < 0 || n.x > canvas.width) n.vx *= -1;
-              if (n.y < 0 || n.y > canvas.height) n.vy *= -1;
-            }
-            for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) {
-              const dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
-              const d = Math.sqrt(dx * dx + dy * dy);
-              if (d < DIST) {
-                ctx.beginPath();
-                ctx.strokeStyle = "rgba(193,61,42," + (1 - d / DIST) * .15 + ")";
-                ctx.lineWidth = .8;
-                ctx.moveTo(nodes[i].x, nodes[i].y);
-                ctx.lineTo(nodes[j].x, nodes[j].y);
-                ctx.stroke();
-              }
-            }
-            for (const n of nodes) {
-              ctx.beginPath();
-              ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-              ctx.fillStyle = "rgba(193,61,42,.22)";
-              ctx.fill();
-            }
-            requestAnimationFrame(tick);
-          }
-          resize(); init(); tick();
-          window.addEventListener("resize", resize);
-        })();
+    <hr>
 
-        /* ── analyze logic ── */
-        (function () {
-          const loadingWrap = document.getElementById("loading-wrap");
-          const dashboard   = document.getElementById("dashboard");
-          const errorEl     = document.getElementById("analyze-error");
-          const CIRCUM = ${circum};
+    <div class="bio-section">
+      <p class="kicker" style="margin-bottom:.6rem;">Bio suggerita</p>
+      <p class="bio-box" id="bio-text">—</p>
+    </div>
 
-          function esc(s) {
-            return String(s).replace(/[<>&"']/g, c =>
-              ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&#39;" }[c]));
-          }
-          function setList(id, arr) {
-            document.getElementById(id).innerHTML =
-              (Array.isArray(arr) ? arr : []).map(v => "<li>" + esc(v) + "</li>").join("");
-          }
-          function animateScore(score) {
-            const ring = document.getElementById("ring-fill");
-            const num  = document.getElementById("score-num");
-            score = Math.max(0, Math.min(100, score || 0));
-            ring.style.strokeDashoffset = CIRCUM * (1 - score / 100);
-            let cur = 0;
-            const step = score / 60;
-            const iv = setInterval(() => {
-              cur = Math.min(cur + step, score);
-              num.textContent = Math.round(cur);
-              if (cur >= score) clearInterval(iv);
-            }, 16);
-          }
+    <div class="cta-row">
+      <a class="btn-primary" href="/generate">Genera il tuo piano</a>
+      <a class="btn-ghost" href="/">← Home</a>
+    </div>
+  </div>
 
-          async function load() {
-            try {
-              const raw    = sessionStorage.getItem("shieldCreatorInput");
-              const userId = sessionStorage.getItem("shieldUserId");
-              if (!raw || !userId) throw new Error("Dati mancanti in sessionStorage — torna a /generate.");
-              const creatorInput = JSON.parse(raw);
-              const res  = await fetch("/api/analyze", {
-                method: "POST",
-                headers: { "content-type": "application/json", "x-session-id": window.__shiaSessionId || "" },
-                body: JSON.stringify({ userId, creatorInput })
-              });
-              const data = await res.json();
-              if (!res.ok) throw new Error(data?.error?.message || "Analisi fallita");
+</div>
 
-              loadingWrap.style.display = "none";
-              dashboard.style.display   = "";
-              animateScore(data.growth_score);
-              document.getElementById("verdict-text").textContent = data.score_explanation || "—";
-              setList("forze-list",       data.punti_di_forza);
-              setList("errori-list",      data.errori_principali);
-              setList("opportunita-list", data.opportunita);
-              document.getElementById("bio-box").textContent = data.suggerimento_bio || "—";
-            } catch (err) {
-              loadingWrap.style.display = "none";
-              errorEl.textContent = err.message;
-            }
-          }
-          load();
-        })();
-      </script>
-    `
-  });
+<script>
+  /* session id */
+  (function () {
+    try {
+      var k = "shia.session.id", v = localStorage.getItem(k);
+      if (!v) { v = "sess_" + Date.now() + "_" + Math.floor(Math.random() * 1e9); localStorage.setItem(k, v); }
+      window.__shiaSessionId = v;
+    } catch (e) { window.__shiaSessionId = null; }
+  })();
+
+  /* neural network canvas */
+  (function () {
+    var canvas = document.getElementById("nn");
+    var ctx = canvas.getContext("2d");
+    var N = 40, DIST = 160, nodes = [];
+    function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+    function init() {
+      nodes = [];
+      for (var i = 0; i < N; i++) {
+        nodes.push({
+          x: Math.random() * innerWidth, y: Math.random() * innerHeight,
+          vx: (Math.random() - .5) * .4, vy: (Math.random() - .5) * .4,
+          r: 1.8 + Math.random() * 1.5
+        });
+      }
+    }
+    function tick() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (var i = 0; i < N; i++) {
+        nodes[i].x += nodes[i].vx; nodes[i].y += nodes[i].vy;
+        if (nodes[i].x < 0 || nodes[i].x > canvas.width)  nodes[i].vx *= -1;
+        if (nodes[i].y < 0 || nodes[i].y > canvas.height) nodes[i].vy *= -1;
+      }
+      for (var i = 0; i < N; i++) for (var j = i + 1; j < N; j++) {
+        var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
+        var d = Math.sqrt(dx * dx + dy * dy);
+        if (d < DIST) {
+          ctx.beginPath();
+          ctx.strokeStyle = "rgba(193,61,42," + ((1 - d / DIST) * .12) + ")";
+          ctx.lineWidth = .7;
+          ctx.moveTo(nodes[i].x, nodes[i].y);
+          ctx.lineTo(nodes[j].x, nodes[j].y);
+          ctx.stroke();
+        }
+      }
+      for (var i = 0; i < N; i++) {
+        ctx.beginPath();
+        ctx.arc(nodes[i].x, nodes[i].y, nodes[i].r, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(193,61,42,.18)";
+        ctx.fill();
+      }
+      requestAnimationFrame(tick);
+    }
+    resize(); init(); tick();
+    window.addEventListener("resize", function () { resize(); });
+  })();
+
+  /* analyze */
+  (function () {
+    var loading = document.getElementById("loading");
+    var dash    = document.getElementById("dash");
+    var errEl   = document.getElementById("err");
+
+    function esc(s) {
+      return String(s).replace(/[<>&"']/g, function (c) {
+        return { "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&#39;" }[c];
+      });
+    }
+    function setList(id, arr) {
+      document.getElementById(id).innerHTML =
+        (Array.isArray(arr) ? arr : []).map(function (v) { return "<li>" + esc(v) + "</li>"; }).join("");
+    }
+    function animateRing(score) {
+      var ring = document.getElementById("ring-outer");
+      var num  = document.getElementById("score-num");
+      score = Math.max(0, Math.min(100, score || 0));
+      var dur = 1200, start = performance.now();
+      function frame(now) {
+        var t = Math.min((now - start) / dur, 1);
+        var eased = 1 - Math.pow(1 - t, 3);
+        var cur = Math.round(score * eased);
+        ring.style.setProperty("--pct", cur);
+        num.textContent = cur;
+        if (t < 1) requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    }
+
+    function load() {
+      var raw    = sessionStorage.getItem("shieldCreatorInput");
+      var userId = sessionStorage.getItem("shieldUserId");
+      if (!raw || !userId) {
+        loading.style.display = "none";
+        errEl.textContent = "Dati mancanti in sessionStorage — torna a /generate.";
+        return;
+      }
+      var creatorInput;
+      try { creatorInput = JSON.parse(raw); } catch (e) {
+        loading.style.display = "none";
+        errEl.textContent = "creatorInput non valido — torna a /generate.";
+        return;
+      }
+      fetch("/api/analyze", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-session-id": window.__shiaSessionId || "" },
+        body: JSON.stringify({ userId: userId, creatorInput: creatorInput })
+      })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (r) {
+        if (!r.ok) throw new Error(r.data && r.data.error ? r.data.error.message : "Analisi fallita");
+        var d = r.data;
+        loading.style.display = "none";
+        dash.style.display    = "";
+        animateRing(d.growth_score);
+        document.getElementById("verdict-text").textContent = d.score_explanation || "—";
+        setList("forze-list",       d.punti_di_forza);
+        setList("errori-list",      d.errori_principali);
+        setList("opportunita-list", d.opportunita);
+        document.getElementById("bio-text").textContent = d.suggerimento_bio || "—";
+      })
+      .catch(function (err) {
+        loading.style.display = "none";
+        errEl.textContent = err.message;
+      });
+    }
+    load();
+  })();
+</script>
+
+</body>
+</html>`;
 }
 
 export function renderDashboardPage({ userId, previews, payments, sprints }) {
