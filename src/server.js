@@ -33,7 +33,7 @@ const app = express();
 const store = new FileStore();
 const client = new TikTokClient(config);
 const ingestion = new IngestionService(client, store);
-const generation = new GenerationService();
+const generation = new GenerationService(process.env.OPENAI_API_KEY || null);
 const alerting = new AlertingService({
   webhookUrl: config.alertWebhookUrl,
   source: config.alertSource
