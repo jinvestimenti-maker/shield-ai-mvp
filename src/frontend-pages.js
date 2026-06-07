@@ -813,7 +813,7 @@ export function renderAnalyzePage() {
         if (!r.ok) throw new Error(r.data && r.data.error ? r.data.error.message : "Analisi fallita");
         var d = r.data;
         loading.style.display = "none";
-        dash.style.display    = "";
+        dash.style.display    = "block";
         animateRing(d.growth_score);
         document.getElementById("verdict-text").textContent = d.score_explanation || "—";
         setList("forze-list",       d.punti_di_forza);
