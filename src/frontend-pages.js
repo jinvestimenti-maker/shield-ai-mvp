@@ -175,39 +175,257 @@ function deriveOnboardingPathFromSource(source) {
 }
 
 export function renderLandingPage() {
-  return renderAppShell({
-    title: "SHIA MVP",
-    heading: "Turn a TikTok profile into a 7-day content sprint.",
-    subheading:
-      "Generate a free preview, unlock with Stripe, and get a complete posting sprint from the same flow.",
-    body: `
-      <section class="card">
-        <p class="kicker">MVP Flow</p>
-        <p>Landing → Generate → Preview → Paywall → Sprint → Dashboard</p>
-      </section>
-      <section class="split">
-        <article class="card">
-          <p class="kicker">What you get in preview</p>
-          <ul>
-            <li>2 video ideas and 2 hooks</li>
-            <li>1 profile optimization tip</li>
-            <li>7-day teaser calendar</li>
-          </ul>
-        </article>
-        <article class="card">
-          <p class="kicker">After payment</p>
-          <ul>
-            <li>Full 7-day sprint with hooks and captions</li>
-            <li>CTA recommendations and profile checklist</li>
-            <li>Saved in dashboard by user id</li>
-          </ul>
-        </article>
-      </section>
-      <section class="actions">
-        <a class="chip" href="/generate">Start Generator</a>
-      </section>
-    `
-  });
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SHIA MVP — Shield AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-display@600,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:  #1a1d2e;
+      --bg2: #242842;
+      --ink:  #eef0f7;
+      --ink2: #c2c6da;
+      --ink3: #8d92ad;
+      --line: #353a56;
+      --green:  #4ade80;
+      --orange: #fb923c;
+      --blue:   #60a5fa;
+      --a1: #ff6452;
+      --a2: #f59e0b;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Plus Jakarta Sans", sans-serif; color: var(--ink); min-height: 100vh;
+      background:
+        radial-gradient(circle at 12% 8%,  rgba(255,100,82,.10) 0%, transparent 38%),
+        radial-gradient(circle at 88% 18%, rgba(245,158,11,.08) 0%, transparent 34%),
+        radial-gradient(circle at 50% 96%, rgba(96,165,250,.07) 0%, transparent 42%),
+        var(--bg);
+    }
+    #nn { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+    .page { position: relative; z-index: 1; width: min(880px, 94vw); margin: 0 auto; padding: 2.5rem 0 5rem; }
+
+    /* header */
+    .hdr { display: flex; align-items: center; gap: .75rem; margin-bottom: 2.8rem; }
+    .logo-sq {
+      width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--a1) 0%, var(--a2) 100%);
+      display: grid; place-items: center;
+      font-family: "Clash Display", sans-serif; font-weight: 700; font-size: 1.1rem; color: #fff;
+    }
+    .logo-name { font-family: "Clash Display", sans-serif; font-weight: 700; font-size: 1.25rem; letter-spacing: -.02em; }
+
+    /* heading */
+    .hero-title {
+      font-family: "Clash Display", sans-serif; font-weight: 700;
+      font-size: clamp(1.9rem, 4.4vw, 2.9rem); letter-spacing: -.03em; margin-bottom: .6rem; max-width: 22ch;
+    }
+    .hero-sub { font-size: .95rem; font-weight: 500; color: var(--ink3); margin-bottom: 2.4rem; max-width: 60ch; }
+
+    /* cards */
+    .kicker { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--ink3); margin-bottom: .6rem; }
+    .card {
+      background: var(--bg2); border: 1px solid var(--line); border-radius: 16px;
+      padding: 1.25rem 1.4rem; margin-bottom: 1.1rem;
+    }
+    .card p { color: var(--ink2); font-size: .92rem; line-height: 1.5; font-weight: 500; }
+    .split { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1.1rem; }
+    .page ul { list-style: none; display: flex; flex-direction: column; gap: .55rem; margin-top: .2rem; }
+    .page li { font-size: .9rem; line-height: 1.45; color: var(--ink2); font-weight: 500; padding-left: 1.05rem; position: relative; }
+    .page li::before { content: "•"; position: absolute; left: 0; color: var(--a1); font-weight: 900; }
+
+    /* buttons */
+    .btn-primary {
+      display: inline-block; text-decoration: none; cursor: pointer; border: 0;
+      background: linear-gradient(135deg, var(--a1) 0%, #df6a3c 100%);
+      color: #fff; font-family: "Plus Jakarta Sans", sans-serif; font-weight: 700;
+      font-size: .95rem; padding: .85rem 1.8rem; border-radius: 999px; transition: opacity .15s;
+    }
+    .btn-primary:hover { opacity: .85; }
+    .btn-ghost { font-size: .88rem; color: var(--ink3); text-decoration: none; font-weight: 500; }
+    .btn-ghost:hover { color: var(--ink); }
+    .actions-row { display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; margin-top: .5rem; }
+  </style>
+</head>
+<body>
+
+<canvas id="nn"></canvas>
+
+<div class="page">
+
+  <header class="hdr">
+    <div class="logo-sq">S</div>
+    <span class="logo-name">Shield AI</span>
+  </header>
+
+  <p class="hero-title">Turn a TikTok profile into a 7-day content sprint.</p>
+  <p class="hero-sub">Generate a free preview, unlock with Stripe, and get a complete posting sprint from the same flow.</p>
+
+  <section class="card">
+    <p class="kicker">MVP Flow</p>
+    <p>Landing → Generate → Preview → Paywall → Sprint → Dashboard</p>
+  </section>
+
+  <div class="split">
+    <article class="card">
+      <p class="kicker">What you get in preview</p>
+      <ul>
+        <li>2 video ideas and 2 hooks</li>
+        <li>1 profile optimization tip</li>
+        <li>7-day teaser calendar</li>
+      </ul>
+    </article>
+    <article class="card">
+      <p class="kicker">After payment</p>
+      <ul>
+        <li>Full 7-day sprint with hooks and captions</li>
+        <li>CTA recommendations and profile checklist</li>
+        <li>Saved in dashboard by user id</li>
+      </ul>
+    </article>
+  </div>
+
+  <div class="actions-row">
+    <a class="btn-primary" href="/generate">Start Generator →</a>
+    <a class="btn-ghost" href="/dashboard">Dashboard</a>
+  </div>
+
+</div>
+
+<script>
+  /* session id */
+  (function () {
+    try {
+      var k = "shia.session.id", v = localStorage.getItem(k);
+      if (!v) { v = "sess_" + Date.now() + "_" + Math.floor(Math.random() * 1e9); localStorage.setItem(k, v); }
+      window.__shiaSessionId = v;
+    } catch (e) { window.__shiaSessionId = null; }
+  })();
+
+  /* neural network canvas */
+  (function () {
+    var canvas = document.getElementById("nn");
+    var ctx = canvas.getContext("2d");
+    var N = 60, DIST = 170, nodes = [], pulses = [], flashes = [];
+    function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+    function init() {
+      nodes = [];
+      pulses = [];
+      flashes = new Array(N).fill(0);
+      for (var i = 0; i < N; i++) {
+        var z = Math.random();
+        nodes.push({
+          x: Math.random() * innerWidth, y: Math.random() * innerHeight,
+          vx: (Math.random() - .5) * (.12 + z * .5),
+          vy: (Math.random() - .5) * (.12 + z * .5),
+          r: 1 + z * 3,
+          z: z
+        });
+      }
+      nodes.sort(function (a, b) { return a.z - b.z; });
+    }
+    function neighborsOf(i) {
+      var list = [];
+      for (var j = 0; j < N; j++) {
+        if (j === i) continue;
+        var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
+        if (Math.sqrt(dx * dx + dy * dy) < DIST) list.push(j);
+      }
+      return list;
+    }
+    function fire(i) {
+      flashes[i] = 1;
+      if (Math.random() < .8) {
+        var list = neighborsOf(i);
+        if (list.length) {
+          var j = list[Math.floor(Math.random() * list.length)];
+          pulses.push({ a: i, b: j, t: 0, speed: .025 + Math.random() * .03 });
+        }
+      }
+    }
+    function tick() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (var i = 0; i < N; i++) {
+        nodes[i].x += nodes[i].vx; nodes[i].y += nodes[i].vy;
+        if (nodes[i].x < 0 || nodes[i].x > canvas.width)  nodes[i].vx *= -1;
+        if (nodes[i].y < 0 || nodes[i].y > canvas.height) nodes[i].vy *= -1;
+        flashes[i] = Math.max(0, flashes[i] - .035);
+      }
+      if (Math.random() < .05) fire(Math.floor(Math.random() * N));
+
+      /* synapse connections — brighten when either end is firing */
+      for (var i = 0; i < N; i++) for (var j = i + 1; j < N; j++) {
+        var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
+        var d = Math.sqrt(dx * dx + dy * dy);
+        if (d < DIST) {
+          var depth = (nodes[i].z + nodes[j].z) / 2;
+          var boost = Math.max(flashes[i], flashes[j]) * .5;
+          ctx.beginPath();
+          ctx.strokeStyle = "rgba(255,100,82," + ((1 - d / DIST) * (.08 + depth * .34 + boost)) + ")";
+          ctx.lineWidth = .5 + depth * .9 + boost * 1.2;
+          ctx.moveTo(nodes[i].x, nodes[i].y);
+          ctx.lineTo(nodes[j].x, nodes[j].y);
+          ctx.stroke();
+        }
+      }
+
+      /* traveling impulses with glowing trail */
+      for (var p = pulses.length - 1; p >= 0; p--) {
+        var pulse = pulses[p];
+        pulse.t += pulse.speed;
+        if (pulse.t >= 1) { fire(pulse.b); pulses.splice(p, 1); continue; }
+        var a = nodes[pulse.a], b = nodes[pulse.b];
+        var x = a.x + (b.x - a.x) * pulse.t;
+        var y = a.y + (b.y - a.y) * pulse.t;
+        var glow = ctx.createRadialGradient(x, y, 0, x, y, 8);
+        glow.addColorStop(0, "rgba(255,214,180,.9)");
+        glow.addColorStop(1, "rgba(255,100,82,0)");
+        ctx.fillStyle = glow;
+        ctx.beginPath(); ctx.arc(x, y, 8, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(x, y, 1.7, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255,238,225,.95)";
+        ctx.fill();
+      }
+
+      /* nodes, back to front, flashing ones light up like firing neurons */
+      for (var i = 0; i < N; i++) {
+        var n = nodes[i], flash = flashes[i];
+        var rr = n.r + flash * 3.5;
+        ctx.save();
+        if (flash > .05) {
+          ctx.shadowColor = "rgba(255,225,195," + Math.min(1, flash) + ")";
+          ctx.shadowBlur = 8 + flash * 26;
+        } else if (n.z < .45) {
+          ctx.filter = "blur(" + ((.45 - n.z) * 3.2) + "px)";
+        } else {
+          ctx.shadowColor = "rgba(255,100,82,.85)";
+          ctx.shadowBlur = (n.z - .45) * 18;
+        }
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, rr, 0, Math.PI * 2);
+        ctx.fillStyle = flash > .05
+          ? "rgba(255,232,214," + Math.min(1, .45 + flash * .6) + ")"
+          : "rgba(255,100,82," + (.14 + n.z * .58) + ")";
+        ctx.fill();
+        ctx.restore();
+      }
+
+      requestAnimationFrame(tick);
+    }
+    resize(); init(); tick();
+    window.addEventListener("resize", function () { resize(); });
+  })();
+</script>
+
+</body>
+</html>`;
 }
 
 export function renderGeneratePage() {
@@ -374,10 +592,12 @@ export function renderGeneratePage() {
   (function () {
     var canvas = document.getElementById("nn");
     var ctx = canvas.getContext("2d");
-    var N = 60, DIST = 170, nodes = [];
+    var N = 60, DIST = 170, nodes = [], pulses = [], flashes = [];
     function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
     function init() {
       nodes = [];
+      pulses = [];
+      flashes = new Array(N).fill(0);
       for (var i = 0; i < N; i++) {
         var z = Math.random();
         nodes.push({
@@ -390,41 +610,93 @@ export function renderGeneratePage() {
       }
       nodes.sort(function (a, b) { return a.z - b.z; });
     }
+    function neighborsOf(i) {
+      var list = [];
+      for (var j = 0; j < N; j++) {
+        if (j === i) continue;
+        var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
+        if (Math.sqrt(dx * dx + dy * dy) < DIST) list.push(j);
+      }
+      return list;
+    }
+    function fire(i) {
+      flashes[i] = 1;
+      if (Math.random() < .8) {
+        var list = neighborsOf(i);
+        if (list.length) {
+          var j = list[Math.floor(Math.random() * list.length)];
+          pulses.push({ a: i, b: j, t: 0, speed: .025 + Math.random() * .03 });
+        }
+      }
+    }
     function tick() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
       for (var i = 0; i < N; i++) {
         nodes[i].x += nodes[i].vx; nodes[i].y += nodes[i].vy;
         if (nodes[i].x < 0 || nodes[i].x > canvas.width)  nodes[i].vx *= -1;
         if (nodes[i].y < 0 || nodes[i].y > canvas.height) nodes[i].vy *= -1;
+        flashes[i] = Math.max(0, flashes[i] - .035);
       }
+      if (Math.random() < .05) fire(Math.floor(Math.random() * N));
+
+      /* synapse connections — brighten when either end is firing */
       for (var i = 0; i < N; i++) for (var j = i + 1; j < N; j++) {
         var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
         var d = Math.sqrt(dx * dx + dy * dy);
         if (d < DIST) {
           var depth = (nodes[i].z + nodes[j].z) / 2;
+          var boost = Math.max(flashes[i], flashes[j]) * .5;
           ctx.beginPath();
-          ctx.strokeStyle = "rgba(255,100,82," + ((1 - d / DIST) * (.08 + depth * .34)) + ")";
-          ctx.lineWidth = .5 + depth * .9;
+          ctx.strokeStyle = "rgba(255,100,82," + ((1 - d / DIST) * (.08 + depth * .34 + boost)) + ")";
+          ctx.lineWidth = .5 + depth * .9 + boost * 1.2;
           ctx.moveTo(nodes[i].x, nodes[i].y);
           ctx.lineTo(nodes[j].x, nodes[j].y);
           ctx.stroke();
         }
       }
+
+      /* traveling impulses with glowing trail */
+      for (var p = pulses.length - 1; p >= 0; p--) {
+        var pulse = pulses[p];
+        pulse.t += pulse.speed;
+        if (pulse.t >= 1) { fire(pulse.b); pulses.splice(p, 1); continue; }
+        var a = nodes[pulse.a], b = nodes[pulse.b];
+        var x = a.x + (b.x - a.x) * pulse.t;
+        var y = a.y + (b.y - a.y) * pulse.t;
+        var glow = ctx.createRadialGradient(x, y, 0, x, y, 8);
+        glow.addColorStop(0, "rgba(255,214,180,.9)");
+        glow.addColorStop(1, "rgba(255,100,82,0)");
+        ctx.fillStyle = glow;
+        ctx.beginPath(); ctx.arc(x, y, 8, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(x, y, 1.7, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255,238,225,.95)";
+        ctx.fill();
+      }
+
+      /* nodes, back to front, flashing ones light up like firing neurons */
       for (var i = 0; i < N; i++) {
-        var n = nodes[i];
+        var n = nodes[i], flash = flashes[i];
+        var rr = n.r + flash * 3.5;
         ctx.save();
-        if (n.z < .45) {
+        if (flash > .05) {
+          ctx.shadowColor = "rgba(255,225,195," + Math.min(1, flash) + ")";
+          ctx.shadowBlur = 8 + flash * 26;
+        } else if (n.z < .45) {
           ctx.filter = "blur(" + ((.45 - n.z) * 3.2) + "px)";
         } else {
           ctx.shadowColor = "rgba(255,100,82,.85)";
           ctx.shadowBlur = (n.z - .45) * 18;
         }
         ctx.beginPath();
-        ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(255,100,82," + (.14 + n.z * .58) + ")";
+        ctx.arc(n.x, n.y, rr, 0, Math.PI * 2);
+        ctx.fillStyle = flash > .05
+          ? "rgba(255,232,214," + Math.min(1, .45 + flash * .6) + ")"
+          : "rgba(255,100,82," + (.14 + n.z * .58) + ")";
         ctx.fill();
         ctx.restore();
       }
+
       requestAnimationFrame(tick);
     }
     resize(); init(); tick();
@@ -895,10 +1167,12 @@ export function renderAnalyzePage() {
   (function () {
     var canvas = document.getElementById("nn");
     var ctx = canvas.getContext("2d");
-    var N = 60, DIST = 170, nodes = [];
+    var N = 60, DIST = 170, nodes = [], pulses = [], flashes = [];
     function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
     function init() {
       nodes = [];
+      pulses = [];
+      flashes = new Array(N).fill(0);
       for (var i = 0; i < N; i++) {
         var z = Math.random();
         nodes.push({
@@ -911,41 +1185,93 @@ export function renderAnalyzePage() {
       }
       nodes.sort(function (a, b) { return a.z - b.z; });
     }
+    function neighborsOf(i) {
+      var list = [];
+      for (var j = 0; j < N; j++) {
+        if (j === i) continue;
+        var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
+        if (Math.sqrt(dx * dx + dy * dy) < DIST) list.push(j);
+      }
+      return list;
+    }
+    function fire(i) {
+      flashes[i] = 1;
+      if (Math.random() < .8) {
+        var list = neighborsOf(i);
+        if (list.length) {
+          var j = list[Math.floor(Math.random() * list.length)];
+          pulses.push({ a: i, b: j, t: 0, speed: .025 + Math.random() * .03 });
+        }
+      }
+    }
     function tick() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
       for (var i = 0; i < N; i++) {
         nodes[i].x += nodes[i].vx; nodes[i].y += nodes[i].vy;
         if (nodes[i].x < 0 || nodes[i].x > canvas.width)  nodes[i].vx *= -1;
         if (nodes[i].y < 0 || nodes[i].y > canvas.height) nodes[i].vy *= -1;
+        flashes[i] = Math.max(0, flashes[i] - .035);
       }
+      if (Math.random() < .05) fire(Math.floor(Math.random() * N));
+
+      /* synapse connections — brighten when either end is firing */
       for (var i = 0; i < N; i++) for (var j = i + 1; j < N; j++) {
         var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
         var d = Math.sqrt(dx * dx + dy * dy);
         if (d < DIST) {
           var depth = (nodes[i].z + nodes[j].z) / 2;
+          var boost = Math.max(flashes[i], flashes[j]) * .5;
           ctx.beginPath();
-          ctx.strokeStyle = "rgba(255,100,82," + ((1 - d / DIST) * (.08 + depth * .34)) + ")";
-          ctx.lineWidth = .5 + depth * .9;
+          ctx.strokeStyle = "rgba(255,100,82," + ((1 - d / DIST) * (.08 + depth * .34 + boost)) + ")";
+          ctx.lineWidth = .5 + depth * .9 + boost * 1.2;
           ctx.moveTo(nodes[i].x, nodes[i].y);
           ctx.lineTo(nodes[j].x, nodes[j].y);
           ctx.stroke();
         }
       }
+
+      /* traveling impulses with glowing trail */
+      for (var p = pulses.length - 1; p >= 0; p--) {
+        var pulse = pulses[p];
+        pulse.t += pulse.speed;
+        if (pulse.t >= 1) { fire(pulse.b); pulses.splice(p, 1); continue; }
+        var a = nodes[pulse.a], b = nodes[pulse.b];
+        var x = a.x + (b.x - a.x) * pulse.t;
+        var y = a.y + (b.y - a.y) * pulse.t;
+        var glow = ctx.createRadialGradient(x, y, 0, x, y, 8);
+        glow.addColorStop(0, "rgba(255,214,180,.9)");
+        glow.addColorStop(1, "rgba(255,100,82,0)");
+        ctx.fillStyle = glow;
+        ctx.beginPath(); ctx.arc(x, y, 8, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(x, y, 1.7, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255,238,225,.95)";
+        ctx.fill();
+      }
+
+      /* nodes, back to front, flashing ones light up like firing neurons */
       for (var i = 0; i < N; i++) {
-        var n = nodes[i];
+        var n = nodes[i], flash = flashes[i];
+        var rr = n.r + flash * 3.5;
         ctx.save();
-        if (n.z < .45) {
+        if (flash > .05) {
+          ctx.shadowColor = "rgba(255,225,195," + Math.min(1, flash) + ")";
+          ctx.shadowBlur = 8 + flash * 26;
+        } else if (n.z < .45) {
           ctx.filter = "blur(" + ((.45 - n.z) * 3.2) + "px)";
         } else {
           ctx.shadowColor = "rgba(255,100,82,.85)";
           ctx.shadowBlur = (n.z - .45) * 18;
         }
         ctx.beginPath();
-        ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(255,100,82," + (.14 + n.z * .58) + ")";
+        ctx.arc(n.x, n.y, rr, 0, Math.PI * 2);
+        ctx.fillStyle = flash > .05
+          ? "rgba(255,232,214," + Math.min(1, .45 + flash * .6) + ")"
+          : "rgba(255,100,82," + (.14 + n.z * .58) + ")";
         ctx.fill();
         ctx.restore();
       }
+
       requestAnimationFrame(tick);
     }
     resize(); init(); tick();
@@ -1029,53 +1355,288 @@ export function renderAnalyzePage() {
 }
 
 export function renderDashboardPage({ userId, previews, payments, sprints }) {
-  return renderAppShell({
-    title: "Dashboard",
-    heading: "Creator Dashboard",
-    subheading: userId
-      ? `History for user ${userId}`
-      : "Pass userId query param, for example /dashboard?userId=user-123",
-    body: `
-      <section class="card">
-        <form method="get" action="/dashboard" class="split">
-          <div>
-            <label for="dashboard-user">User ID</label>
-            <input id="dashboard-user" name="userId" value="${escapeHtml(userId || "")}" placeholder="user-123" />
-          </div>
-          <div style="display:flex;align-items:flex-end;">
-            <button type="submit" class="primary">Load Dashboard</button>
-          </div>
-        </form>
-      </section>
-      <section class="split">
-        <article class="card">
-          <p class="kicker">Previews (${previews.length})</p>
-          ${renderList(
-            previews.map(
-              (item) =>
-                `<a href="/preview/${encodeURIComponent(item.id)}?userId=${encodeURIComponent(item.userId)}">${escapeHtml(item.id)}</a> · ${escapeHtml(formatDate(item.createdAt))}`
-            )
-          )}
-        </article>
-        <article class="card">
-          <p class="kicker">Payments (${payments.length})</p>
-          ${renderList(
-            payments.map(
-              (item) =>
-                `<code>${escapeHtml(item.status)}</code> · ${escapeHtml(item.priceVariant)} · <a href="/paywall/${encodeURIComponent(item.previewId)}?userId=${encodeURIComponent(item.userId)}">${escapeHtml(item.previewId)}</a>`
-            )
-          )}
-        </article>
-      </section>
-      <section class="card">
-        <p class="kicker">Sprints (${sprints.length})</p>
-        ${renderList(
-          sprints.map(
-            (item) =>
-              `<a href="/sprint/${encodeURIComponent(item.id)}">${escapeHtml(item.id)}</a> · from preview <code>${escapeHtml(item.previewId)}</code> · ${escapeHtml(formatDate(item.createdAt))}`
-          )
-        )}
-      </section>
-    `
-  });
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard — Shield AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-display@600,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:  #1a1d2e;
+      --bg2: #242842;
+      --ink:  #eef0f7;
+      --ink2: #c2c6da;
+      --ink3: #8d92ad;
+      --line: #353a56;
+      --green:  #4ade80;
+      --orange: #fb923c;
+      --blue:   #60a5fa;
+      --a1: #ff6452;
+      --a2: #f59e0b;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Plus Jakarta Sans", sans-serif; color: var(--ink); min-height: 100vh;
+      background:
+        radial-gradient(circle at 12% 8%,  rgba(255,100,82,.10) 0%, transparent 38%),
+        radial-gradient(circle at 88% 18%, rgba(245,158,11,.08) 0%, transparent 34%),
+        radial-gradient(circle at 50% 96%, rgba(96,165,250,.07) 0%, transparent 42%),
+        var(--bg);
+    }
+    #nn { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+    .page { position: relative; z-index: 1; width: min(880px, 94vw); margin: 0 auto; padding: 2.5rem 0 5rem; }
+
+    /* header */
+    .hdr { display: flex; align-items: center; gap: .75rem; margin-bottom: 2.8rem; }
+    .logo-sq {
+      width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--a1) 0%, var(--a2) 100%);
+      display: grid; place-items: center;
+      font-family: "Clash Display", sans-serif; font-weight: 700; font-size: 1.1rem; color: #fff;
+    }
+    .logo-name { font-family: "Clash Display", sans-serif; font-weight: 700; font-size: 1.25rem; letter-spacing: -.02em; }
+
+    /* heading */
+    .hero-title {
+      font-family: "Clash Display", sans-serif; font-weight: 700;
+      font-size: clamp(1.7rem, 4vw, 2.5rem); letter-spacing: -.03em; margin-bottom: .3rem;
+    }
+    .hero-sub { font-size: .9rem; font-weight: 500; color: var(--ink3); margin-bottom: 2.2rem; max-width: 60ch; }
+
+    /* form */
+    .kicker { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--ink3); margin-bottom: .6rem; }
+    label { display: block; font-size: .82rem; font-weight: 700; color: var(--ink2); margin-bottom: .45rem; }
+    input, select, textarea {
+      width: 100%; font: inherit; font-size: .95rem; color: var(--ink);
+      background: var(--bg2); border: 1px solid var(--line); border-radius: 10px;
+      padding: .75rem .9rem; transition: border-color .15s;
+    }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a1); }
+    .lookup-form { display: flex; align-items: flex-end; gap: 1rem; flex-wrap: wrap; }
+    .lookup-form .field { flex: 1; min-width: 220px; }
+
+    /* cards */
+    .card {
+      background: var(--bg2); border: 1px solid var(--line); border-radius: 16px;
+      padding: 1.25rem 1.4rem; margin-bottom: 1.1rem;
+    }
+    .split { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1.1rem; }
+    .page ul { list-style: none; display: flex; flex-direction: column; gap: .55rem; margin-top: .2rem; }
+    .page li { font-size: .9rem; line-height: 1.45; color: var(--ink2); font-weight: 500; padding-left: 1.05rem; position: relative; }
+    .page li::before { content: "•"; position: absolute; left: 0; color: var(--a1); font-weight: 900; }
+    .page li a { color: var(--ink); font-weight: 700; text-decoration: none; }
+    .page li a:hover { color: var(--a1); }
+    .muted { color: var(--ink3); font-size: .9rem; }
+    code { background: var(--bg); border: 1px solid var(--line); padding: .12rem .4rem; border-radius: 6px; font-size: .85em; color: var(--ink2); }
+
+    /* buttons */
+    .btn-primary {
+      display: inline-block; text-decoration: none; cursor: pointer; border: 0;
+      background: linear-gradient(135deg, var(--a1) 0%, #df6a3c 100%);
+      color: #fff; font-family: "Plus Jakarta Sans", sans-serif; font-weight: 700;
+      font-size: .95rem; padding: .85rem 1.8rem; border-radius: 999px; transition: opacity .15s;
+    }
+    .btn-primary:hover { opacity: .85; }
+    .btn-ghost { font-size: .88rem; color: var(--ink3); text-decoration: none; font-weight: 500; }
+    .btn-ghost:hover { color: var(--ink); }
+    .actions-row { display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; margin-top: .5rem; }
+  </style>
+</head>
+<body>
+
+<canvas id="nn"></canvas>
+
+<div class="page">
+
+  <header class="hdr">
+    <div class="logo-sq">S</div>
+    <span class="logo-name">Shield AI</span>
+  </header>
+
+  <p class="hero-title">Creator Dashboard</p>
+  <p class="hero-sub">${escapeHtml(
+    userId ? `History for user ${userId}` : "Pass userId query param, for example /dashboard?userId=user-123"
+  )}</p>
+
+  <section class="card">
+    <form method="get" action="/dashboard" class="lookup-form">
+      <div class="field">
+        <label for="dashboard-user">User ID</label>
+        <input id="dashboard-user" name="userId" value="${escapeHtml(userId || "")}" placeholder="user-123" />
+      </div>
+      <button type="submit" class="btn-primary">Load Dashboard</button>
+    </form>
+  </section>
+
+  <div class="split">
+    <article class="card">
+      <p class="kicker">Previews (${previews.length})</p>
+      ${renderList(
+        previews.map(
+          (item) =>
+            `<a href="/preview/${encodeURIComponent(item.id)}?userId=${encodeURIComponent(item.userId)}">${escapeHtml(item.id)}</a> · ${escapeHtml(formatDate(item.createdAt))}`
+        )
+      )}
+    </article>
+    <article class="card">
+      <p class="kicker">Payments (${payments.length})</p>
+      ${renderList(
+        payments.map(
+          (item) =>
+            `<code>${escapeHtml(item.status)}</code> · ${escapeHtml(item.priceVariant)} · <a href="/paywall/${encodeURIComponent(item.previewId)}?userId=${encodeURIComponent(item.userId)}">${escapeHtml(item.previewId)}</a>`
+        )
+      )}
+    </article>
+  </div>
+
+  <section class="card">
+    <p class="kicker">Sprints (${sprints.length})</p>
+    ${renderList(
+      sprints.map(
+        (item) =>
+          `<a href="/sprint/${encodeURIComponent(item.id)}">${escapeHtml(item.id)}</a> · from preview <code>${escapeHtml(item.previewId)}</code> · ${escapeHtml(formatDate(item.createdAt))}`
+      )
+    )}
+  </section>
+
+  <div class="actions-row">
+    <a class="btn-ghost" href="/">← Home</a>
+    <a class="btn-ghost" href="/generate">Generate</a>
+  </div>
+
+</div>
+
+<script>
+  /* session id */
+  (function () {
+    try {
+      var k = "shia.session.id", v = localStorage.getItem(k);
+      if (!v) { v = "sess_" + Date.now() + "_" + Math.floor(Math.random() * 1e9); localStorage.setItem(k, v); }
+      window.__shiaSessionId = v;
+    } catch (e) { window.__shiaSessionId = null; }
+  })();
+
+  /* neural network canvas */
+  (function () {
+    var canvas = document.getElementById("nn");
+    var ctx = canvas.getContext("2d");
+    var N = 60, DIST = 170, nodes = [], pulses = [], flashes = [];
+    function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+    function init() {
+      nodes = [];
+      pulses = [];
+      flashes = new Array(N).fill(0);
+      for (var i = 0; i < N; i++) {
+        var z = Math.random();
+        nodes.push({
+          x: Math.random() * innerWidth, y: Math.random() * innerHeight,
+          vx: (Math.random() - .5) * (.12 + z * .5),
+          vy: (Math.random() - .5) * (.12 + z * .5),
+          r: 1 + z * 3,
+          z: z
+        });
+      }
+      nodes.sort(function (a, b) { return a.z - b.z; });
+    }
+    function neighborsOf(i) {
+      var list = [];
+      for (var j = 0; j < N; j++) {
+        if (j === i) continue;
+        var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
+        if (Math.sqrt(dx * dx + dy * dy) < DIST) list.push(j);
+      }
+      return list;
+    }
+    function fire(i) {
+      flashes[i] = 1;
+      if (Math.random() < .8) {
+        var list = neighborsOf(i);
+        if (list.length) {
+          var j = list[Math.floor(Math.random() * list.length)];
+          pulses.push({ a: i, b: j, t: 0, speed: .025 + Math.random() * .03 });
+        }
+      }
+    }
+    function tick() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (var i = 0; i < N; i++) {
+        nodes[i].x += nodes[i].vx; nodes[i].y += nodes[i].vy;
+        if (nodes[i].x < 0 || nodes[i].x > canvas.width)  nodes[i].vx *= -1;
+        if (nodes[i].y < 0 || nodes[i].y > canvas.height) nodes[i].vy *= -1;
+        flashes[i] = Math.max(0, flashes[i] - .035);
+      }
+      if (Math.random() < .05) fire(Math.floor(Math.random() * N));
+
+      /* synapse connections — brighten when either end is firing */
+      for (var i = 0; i < N; i++) for (var j = i + 1; j < N; j++) {
+        var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
+        var d = Math.sqrt(dx * dx + dy * dy);
+        if (d < DIST) {
+          var depth = (nodes[i].z + nodes[j].z) / 2;
+          var boost = Math.max(flashes[i], flashes[j]) * .5;
+          ctx.beginPath();
+          ctx.strokeStyle = "rgba(255,100,82," + ((1 - d / DIST) * (.08 + depth * .34 + boost)) + ")";
+          ctx.lineWidth = .5 + depth * .9 + boost * 1.2;
+          ctx.moveTo(nodes[i].x, nodes[i].y);
+          ctx.lineTo(nodes[j].x, nodes[j].y);
+          ctx.stroke();
+        }
+      }
+
+      /* traveling impulses with glowing trail */
+      for (var p = pulses.length - 1; p >= 0; p--) {
+        var pulse = pulses[p];
+        pulse.t += pulse.speed;
+        if (pulse.t >= 1) { fire(pulse.b); pulses.splice(p, 1); continue; }
+        var a = nodes[pulse.a], b = nodes[pulse.b];
+        var x = a.x + (b.x - a.x) * pulse.t;
+        var y = a.y + (b.y - a.y) * pulse.t;
+        var glow = ctx.createRadialGradient(x, y, 0, x, y, 8);
+        glow.addColorStop(0, "rgba(255,214,180,.9)");
+        glow.addColorStop(1, "rgba(255,100,82,0)");
+        ctx.fillStyle = glow;
+        ctx.beginPath(); ctx.arc(x, y, 8, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(x, y, 1.7, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255,238,225,.95)";
+        ctx.fill();
+      }
+
+      /* nodes, back to front, flashing ones light up like firing neurons */
+      for (var i = 0; i < N; i++) {
+        var n = nodes[i], flash = flashes[i];
+        var rr = n.r + flash * 3.5;
+        ctx.save();
+        if (flash > .05) {
+          ctx.shadowColor = "rgba(255,225,195," + Math.min(1, flash) + ")";
+          ctx.shadowBlur = 8 + flash * 26;
+        } else if (n.z < .45) {
+          ctx.filter = "blur(" + ((.45 - n.z) * 3.2) + "px)";
+        } else {
+          ctx.shadowColor = "rgba(255,100,82,.85)";
+          ctx.shadowBlur = (n.z - .45) * 18;
+        }
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, rr, 0, Math.PI * 2);
+        ctx.fillStyle = flash > .05
+          ? "rgba(255,232,214," + Math.min(1, .45 + flash * .6) + ")"
+          : "rgba(255,100,82," + (.14 + n.z * .58) + ")";
+        ctx.fill();
+        ctx.restore();
+      }
+
+      requestAnimationFrame(tick);
+    }
+    resize(); init(); tick();
+    window.addEventListener("resize", function () { resize(); });
+  })();
+</script>
+
+</body>
+</html>`;
 }
