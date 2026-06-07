@@ -238,7 +238,7 @@ export function renderGeneratePage() {
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: "Plus Jakarta Sans", sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
     #nn { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
-    .page { position: relative; z-index: 1; width: min(720px, 94vw); margin: 0 auto; padding: 2.5rem 0 5rem; }
+    .page { position: relative; z-index: 1; width: min(640px, 94vw); margin: 0 auto; padding: 2.5rem 0 5rem; }
 
     /* header */
     .hdr { display: flex; align-items: center; gap: .75rem; margin-bottom: 2.8rem; }
@@ -259,8 +259,8 @@ export function renderGeneratePage() {
 
     /* form */
     .kicker { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--ink3); margin-bottom: .5rem; }
-    .field { margin-bottom: 1.2rem; }
-    .field-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.2rem; }
+    .field { margin-bottom: .75rem; }
+    .field-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .75rem; }
     label { display: block; font-size: .82rem; font-weight: 700; color: var(--ink2); margin-bottom: .45rem; }
     input, select, textarea {
       width: 100%; font: inherit; font-size: .95rem; color: var(--ink);
@@ -367,7 +367,7 @@ export function renderGeneratePage() {
   (function () {
     var canvas = document.getElementById("nn");
     var ctx = canvas.getContext("2d");
-    var N = 40, DIST = 160, nodes = [];
+    var N = 55, DIST = 180, nodes = [];
     function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
     function init() {
       nodes = [];
@@ -391,8 +391,8 @@ export function renderGeneratePage() {
         var d = Math.sqrt(dx * dx + dy * dy);
         if (d < DIST) {
           ctx.beginPath();
-          ctx.strokeStyle = "rgba(193,61,42," + ((1 - d / DIST) * .12) + ")";
-          ctx.lineWidth = .7;
+          ctx.strokeStyle = "rgba(193,61,42," + ((1 - d / DIST) * .22) + ")";
+          ctx.lineWidth = .8;
           ctx.moveTo(nodes[i].x, nodes[i].y);
           ctx.lineTo(nodes[j].x, nodes[j].y);
           ctx.stroke();
@@ -401,7 +401,7 @@ export function renderGeneratePage() {
       for (var i = 0; i < N; i++) {
         ctx.beginPath();
         ctx.arc(nodes[i].x, nodes[i].y, nodes[i].r, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(193,61,42,.18)";
+        ctx.fillStyle = "rgba(193,61,42,.32)";
         ctx.fill();
       }
       requestAnimationFrame(tick);
