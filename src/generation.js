@@ -38,6 +38,8 @@ ${bestLines || "  No data"}`.trim();
 function buildAnalysisPrompt(input) {
   return `You are Shield AI, an expert TikTok growth analyst. Analyze this creator and return ONLY valid JSON, no markdown.
 
+IMPORTANT: Write ALL text values (score_explanation, punti_di_forza, errori_principali, opportunita, suggerimento_bio, benchmark_note) entirely in the language "${input.profile.language}" — the creator's profile language. Do not switch to English unless "${input.profile.language}" is English.
+
 ${buildProfileContext(input)}
 
 Return this exact JSON structure:
