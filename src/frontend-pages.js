@@ -309,27 +309,61 @@ export function renderLandingPage() {
     } catch (e) { window.__shiaSessionId = null; }
   })();
 
-  /* neural network canvas */
+    /* 3D animated brain — neurons positioned on a brain silhouette, slowly rotating */
   (function () {
     var canvas = document.getElementById("nn");
     var ctx = canvas.getContext("2d");
-    var N = 60, DIST = 170, nodes = [], pulses = [], flashes = [], stars = [];
+
+    var N = 130, LINK_DIST = 48;
+    var FOCAL = 420, CAM_DIST = 480;
+    var nodes = [], adjacency = [], pulses = [], flashes = [], stars = [];
+    var proj = [], order = [];
+    var rotation = 0, scaleMin = 1, scaleMax = 1;
+
     function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+
+    function brainPoint() {
+      var side = Math.random() < .5 ? -1 : 1;
+      var u = Math.random(), v = Math.random();
+      var theta = 2 * Math.PI * u;
+      var phi = Math.acos(2 * v - 1);
+      var lx = Math.sin(phi) * Math.cos(theta);
+      var ly = Math.cos(phi);
+      var lz = Math.sin(phi) * Math.sin(theta);
+      if (side * lx < 0) lx *= .3;            /* flatten medial face -> longitudinal fissure */
+      var rx = 84, ry = 116, rz = 124;
+      return { x: side * 54 + lx * rx, y: ly * ry - 8, z: lz * rz };
+    }
+
     function init() {
       nodes = [];
+      for (var i = 0; i < N; i++) nodes.push(brainPoint());
+
+      adjacency = [];
+      for (var i = 0; i < N; i++) adjacency.push([]);
+      for (var i = 0; i < N; i++) {
+        for (var j = i + 1; j < N; j++) {
+          var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y, dz = nodes[i].z - nodes[j].z;
+          if (Math.sqrt(dx * dx + dy * dy + dz * dz) < LINK_DIST) {
+            adjacency[i].push(j);
+            adjacency[j].push(i);
+          }
+        }
+      }
+
+      var maxR = 0;
+      for (var i = 0; i < N; i++) {
+        var r = Math.sqrt(nodes[i].x * nodes[i].x + nodes[i].z * nodes[i].z);
+        if (r > maxR) maxR = r;
+      }
+      scaleMin = FOCAL / (CAM_DIST + maxR);
+      scaleMax = FOCAL / (CAM_DIST - maxR);
+
       pulses = [];
       flashes = new Array(N).fill(0);
-      for (var i = 0; i < N; i++) {
-        var z = Math.random();
-        nodes.push({
-          x: Math.random() * innerWidth, y: Math.random() * innerHeight,
-          vx: (Math.random() - .5) * (.12 + z * .5),
-          vy: (Math.random() - .5) * (.12 + z * .5),
-          r: 1 + z * 3,
-          z: z
-        });
-      }
-      nodes.sort(function (a, b) { return a.z - b.z; });
+      proj = new Array(N);
+      order = [];
+      for (var i = 0; i < N; i++) order.push(i);
 
       stars = [];
       var starCount = Math.floor((innerWidth * innerHeight) / 4200);
@@ -345,6 +379,7 @@ export function renderLandingPage() {
         });
       }
     }
+
     function drawStars(now) {
       for (var i = 0; i < stars.length; i++) {
         var st = stars[i];
@@ -356,91 +391,96 @@ export function renderLandingPage() {
         ctx.fill();
       }
     }
-    function neighborsOf(i) {
-      var list = [];
-      for (var j = 0; j < N; j++) {
-        if (j === i) continue;
-        var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
-        if (Math.sqrt(dx * dx + dy * dy) < DIST) list.push(j);
-      }
-      return list;
-    }
+
     function fire(i) {
       flashes[i] = 1;
-      if (Math.random() < .8) {
-        var list = neighborsOf(i);
-        if (list.length) {
-          var j = list[Math.floor(Math.random() * list.length)];
-          pulses.push({ a: i, b: j, t: 0, speed: .025 + Math.random() * .03 });
-        }
+      if (Math.random() < .85 && adjacency[i].length) {
+        var j = adjacency[i][Math.floor(Math.random() * adjacency[i].length)];
+        pulses.push({ a: i, b: j, t: 0, speed: .022 + Math.random() * .026 });
       }
     }
+
     function tick(now) {
       now = now || performance.now();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawStars(now);
 
+      rotation += .0028;
+      var cos = Math.cos(rotation), sin = Math.sin(rotation);
+      var cx = canvas.width / 2, cy = canvas.height / 2;
+
       for (var i = 0; i < N; i++) {
-        nodes[i].x += nodes[i].vx; nodes[i].y += nodes[i].vy;
-        if (nodes[i].x < 0 || nodes[i].x > canvas.width)  nodes[i].vx *= -1;
-        if (nodes[i].y < 0 || nodes[i].y > canvas.height) nodes[i].vy *= -1;
+        var n = nodes[i];
+        var xr = n.x * cos + n.z * sin;
+        var zr = -n.x * sin + n.z * cos;
+        var sc = FOCAL / (CAM_DIST + zr);
+        var t = (sc - scaleMin) / (scaleMax - scaleMin);
+        if (t < 0) t = 0; else if (t > 1) t = 1;
+        proj[i] = { x: cx + xr * sc, y: cy + n.y * sc, scale: sc, t: t };
         flashes[i] = Math.max(0, flashes[i] - .035);
       }
-      if (Math.random() < .05) fire(Math.floor(Math.random() * N));
+      order.sort(function (a, b) { return proj[a].scale - proj[b].scale; });
 
-      /* synapse connections — brighten when either end is firing */
-      for (var i = 0; i < N; i++) for (var j = i + 1; j < N; j++) {
-        var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
-        var d = Math.sqrt(dx * dx + dy * dy);
-        if (d < DIST) {
-          var depth = (nodes[i].z + nodes[j].z) / 2;
-          var boost = Math.max(flashes[i], flashes[j]) * .5;
+      if (Math.random() < .07) fire(Math.floor(Math.random() * N));
+
+      /* synapse mesh — brighter & thicker the closer to the viewer, glows when firing */
+      for (var i = 0; i < N; i++) {
+        var nb = adjacency[i];
+        for (var k = 0; k < nb.length; k++) {
+          var j = nb[k];
+          if (j < i) continue;
+          var pa = proj[i], pb = proj[j];
+          var depth = (pa.t + pb.t) / 2;
+          var boost = Math.max(flashes[i], flashes[j]) * .55;
           ctx.beginPath();
-          ctx.strokeStyle = "rgba(255,100,82," + ((1 - d / DIST) * (.08 + depth * .34 + boost)) + ")";
-          ctx.lineWidth = .5 + depth * .9 + boost * 1.2;
-          ctx.moveTo(nodes[i].x, nodes[i].y);
-          ctx.lineTo(nodes[j].x, nodes[j].y);
+          ctx.strokeStyle = "rgba(255,110,90," + (.05 + depth * .3 + boost) + ")";
+          ctx.lineWidth = .4 + depth * 1.1 + boost * 1.3;
+          ctx.moveTo(pa.x, pa.y);
+          ctx.lineTo(pb.x, pb.y);
           ctx.stroke();
         }
       }
 
-      /* traveling impulses with glowing trail */
+      /* electrical impulses travelling along synapses with a glowing trail */
       for (var p = pulses.length - 1; p >= 0; p--) {
         var pulse = pulses[p];
         pulse.t += pulse.speed;
         if (pulse.t >= 1) { fire(pulse.b); pulses.splice(p, 1); continue; }
-        var a = nodes[pulse.a], b = nodes[pulse.b];
-        var x = a.x + (b.x - a.x) * pulse.t;
-        var y = a.y + (b.y - a.y) * pulse.t;
-        var glow = ctx.createRadialGradient(x, y, 0, x, y, 8);
-        glow.addColorStop(0, "rgba(255,214,180,.9)");
+        var pa = proj[pulse.a], pb = proj[pulse.b];
+        var x = pa.x + (pb.x - pa.x) * pulse.t;
+        var y = pa.y + (pb.y - pa.y) * pulse.t;
+        var depth = (pa.t + pb.t) / 2;
+        var rad = 5 + depth * 5;
+        var glow = ctx.createRadialGradient(x, y, 0, x, y, rad);
+        glow.addColorStop(0, "rgba(255,221,195," + (.55 + depth * .4) + ")");
         glow.addColorStop(1, "rgba(255,100,82,0)");
         ctx.fillStyle = glow;
-        ctx.beginPath(); ctx.arc(x, y, 8, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(x, y, 1.7, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(255,238,225,.95)";
+        ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(x, y, 1.3 + depth * 1.1, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255,240,228," + (.7 + depth * .3) + ")";
         ctx.fill();
       }
 
-      /* nodes, back to front, flashing ones light up like firing neurons */
-      for (var i = 0; i < N; i++) {
-        var n = nodes[i], flash = flashes[i];
-        var rr = n.r + flash * 3.5;
+      /* neurons, drawn back to front — close ones bigger & glowing, far ones small & blurred */
+      for (var oi = 0; oi < order.length; oi++) {
+        var i = order[oi];
+        var pr = proj[i], flash = flashes[i];
+        var rr = (1 + pr.t * 2.6) + flash * 3.2;
         ctx.save();
         if (flash > .05) {
           ctx.shadowColor = "rgba(255,225,195," + Math.min(1, flash) + ")";
           ctx.shadowBlur = 8 + flash * 26;
-        } else if (n.z < .45) {
-          ctx.filter = "blur(" + ((.45 - n.z) * 3.2) + "px)";
+        } else if (pr.t < .4) {
+          ctx.filter = "blur(" + ((.4 - pr.t) * 3.4) + "px)";
         } else {
-          ctx.shadowColor = "rgba(255,100,82,.85)";
-          ctx.shadowBlur = (n.z - .45) * 18;
+          ctx.shadowColor = "rgba(255,100,82,.8)";
+          ctx.shadowBlur = (pr.t - .4) * 16;
         }
         ctx.beginPath();
-        ctx.arc(n.x, n.y, rr, 0, Math.PI * 2);
+        ctx.arc(pr.x, pr.y, rr, 0, Math.PI * 2);
         ctx.fillStyle = flash > .05
-          ? "rgba(255,232,214," + Math.min(1, .45 + flash * .6) + ")"
-          : "rgba(255,100,82," + (.14 + n.z * .58) + ")";
+          ? "rgba(255,232,214," + Math.min(1, .4 + flash * .6) + ")"
+          : "rgba(255,110,90," + (.12 + pr.t * .55) + ")";
         ctx.fill();
         ctx.restore();
       }
@@ -617,27 +657,61 @@ export function renderGeneratePage() {
     } catch (e) { window.__shiaSessionId = null; }
   })();
 
-  /* neural network canvas */
+    /* 3D animated brain — neurons positioned on a brain silhouette, slowly rotating */
   (function () {
     var canvas = document.getElementById("nn");
     var ctx = canvas.getContext("2d");
-    var N = 60, DIST = 170, nodes = [], pulses = [], flashes = [], stars = [];
+
+    var N = 130, LINK_DIST = 48;
+    var FOCAL = 420, CAM_DIST = 480;
+    var nodes = [], adjacency = [], pulses = [], flashes = [], stars = [];
+    var proj = [], order = [];
+    var rotation = 0, scaleMin = 1, scaleMax = 1;
+
     function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+
+    function brainPoint() {
+      var side = Math.random() < .5 ? -1 : 1;
+      var u = Math.random(), v = Math.random();
+      var theta = 2 * Math.PI * u;
+      var phi = Math.acos(2 * v - 1);
+      var lx = Math.sin(phi) * Math.cos(theta);
+      var ly = Math.cos(phi);
+      var lz = Math.sin(phi) * Math.sin(theta);
+      if (side * lx < 0) lx *= .3;            /* flatten medial face -> longitudinal fissure */
+      var rx = 84, ry = 116, rz = 124;
+      return { x: side * 54 + lx * rx, y: ly * ry - 8, z: lz * rz };
+    }
+
     function init() {
       nodes = [];
+      for (var i = 0; i < N; i++) nodes.push(brainPoint());
+
+      adjacency = [];
+      for (var i = 0; i < N; i++) adjacency.push([]);
+      for (var i = 0; i < N; i++) {
+        for (var j = i + 1; j < N; j++) {
+          var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y, dz = nodes[i].z - nodes[j].z;
+          if (Math.sqrt(dx * dx + dy * dy + dz * dz) < LINK_DIST) {
+            adjacency[i].push(j);
+            adjacency[j].push(i);
+          }
+        }
+      }
+
+      var maxR = 0;
+      for (var i = 0; i < N; i++) {
+        var r = Math.sqrt(nodes[i].x * nodes[i].x + nodes[i].z * nodes[i].z);
+        if (r > maxR) maxR = r;
+      }
+      scaleMin = FOCAL / (CAM_DIST + maxR);
+      scaleMax = FOCAL / (CAM_DIST - maxR);
+
       pulses = [];
       flashes = new Array(N).fill(0);
-      for (var i = 0; i < N; i++) {
-        var z = Math.random();
-        nodes.push({
-          x: Math.random() * innerWidth, y: Math.random() * innerHeight,
-          vx: (Math.random() - .5) * (.12 + z * .5),
-          vy: (Math.random() - .5) * (.12 + z * .5),
-          r: 1 + z * 3,
-          z: z
-        });
-      }
-      nodes.sort(function (a, b) { return a.z - b.z; });
+      proj = new Array(N);
+      order = [];
+      for (var i = 0; i < N; i++) order.push(i);
 
       stars = [];
       var starCount = Math.floor((innerWidth * innerHeight) / 4200);
@@ -653,6 +727,7 @@ export function renderGeneratePage() {
         });
       }
     }
+
     function drawStars(now) {
       for (var i = 0; i < stars.length; i++) {
         var st = stars[i];
@@ -664,91 +739,96 @@ export function renderGeneratePage() {
         ctx.fill();
       }
     }
-    function neighborsOf(i) {
-      var list = [];
-      for (var j = 0; j < N; j++) {
-        if (j === i) continue;
-        var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
-        if (Math.sqrt(dx * dx + dy * dy) < DIST) list.push(j);
-      }
-      return list;
-    }
+
     function fire(i) {
       flashes[i] = 1;
-      if (Math.random() < .8) {
-        var list = neighborsOf(i);
-        if (list.length) {
-          var j = list[Math.floor(Math.random() * list.length)];
-          pulses.push({ a: i, b: j, t: 0, speed: .025 + Math.random() * .03 });
-        }
+      if (Math.random() < .85 && adjacency[i].length) {
+        var j = adjacency[i][Math.floor(Math.random() * adjacency[i].length)];
+        pulses.push({ a: i, b: j, t: 0, speed: .022 + Math.random() * .026 });
       }
     }
+
     function tick(now) {
       now = now || performance.now();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawStars(now);
 
+      rotation += .0028;
+      var cos = Math.cos(rotation), sin = Math.sin(rotation);
+      var cx = canvas.width / 2, cy = canvas.height / 2;
+
       for (var i = 0; i < N; i++) {
-        nodes[i].x += nodes[i].vx; nodes[i].y += nodes[i].vy;
-        if (nodes[i].x < 0 || nodes[i].x > canvas.width)  nodes[i].vx *= -1;
-        if (nodes[i].y < 0 || nodes[i].y > canvas.height) nodes[i].vy *= -1;
+        var n = nodes[i];
+        var xr = n.x * cos + n.z * sin;
+        var zr = -n.x * sin + n.z * cos;
+        var sc = FOCAL / (CAM_DIST + zr);
+        var t = (sc - scaleMin) / (scaleMax - scaleMin);
+        if (t < 0) t = 0; else if (t > 1) t = 1;
+        proj[i] = { x: cx + xr * sc, y: cy + n.y * sc, scale: sc, t: t };
         flashes[i] = Math.max(0, flashes[i] - .035);
       }
-      if (Math.random() < .05) fire(Math.floor(Math.random() * N));
+      order.sort(function (a, b) { return proj[a].scale - proj[b].scale; });
 
-      /* synapse connections — brighten when either end is firing */
-      for (var i = 0; i < N; i++) for (var j = i + 1; j < N; j++) {
-        var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
-        var d = Math.sqrt(dx * dx + dy * dy);
-        if (d < DIST) {
-          var depth = (nodes[i].z + nodes[j].z) / 2;
-          var boost = Math.max(flashes[i], flashes[j]) * .5;
+      if (Math.random() < .07) fire(Math.floor(Math.random() * N));
+
+      /* synapse mesh — brighter & thicker the closer to the viewer, glows when firing */
+      for (var i = 0; i < N; i++) {
+        var nb = adjacency[i];
+        for (var k = 0; k < nb.length; k++) {
+          var j = nb[k];
+          if (j < i) continue;
+          var pa = proj[i], pb = proj[j];
+          var depth = (pa.t + pb.t) / 2;
+          var boost = Math.max(flashes[i], flashes[j]) * .55;
           ctx.beginPath();
-          ctx.strokeStyle = "rgba(255,100,82," + ((1 - d / DIST) * (.08 + depth * .34 + boost)) + ")";
-          ctx.lineWidth = .5 + depth * .9 + boost * 1.2;
-          ctx.moveTo(nodes[i].x, nodes[i].y);
-          ctx.lineTo(nodes[j].x, nodes[j].y);
+          ctx.strokeStyle = "rgba(255,110,90," + (.05 + depth * .3 + boost) + ")";
+          ctx.lineWidth = .4 + depth * 1.1 + boost * 1.3;
+          ctx.moveTo(pa.x, pa.y);
+          ctx.lineTo(pb.x, pb.y);
           ctx.stroke();
         }
       }
 
-      /* traveling impulses with glowing trail */
+      /* electrical impulses travelling along synapses with a glowing trail */
       for (var p = pulses.length - 1; p >= 0; p--) {
         var pulse = pulses[p];
         pulse.t += pulse.speed;
         if (pulse.t >= 1) { fire(pulse.b); pulses.splice(p, 1); continue; }
-        var a = nodes[pulse.a], b = nodes[pulse.b];
-        var x = a.x + (b.x - a.x) * pulse.t;
-        var y = a.y + (b.y - a.y) * pulse.t;
-        var glow = ctx.createRadialGradient(x, y, 0, x, y, 8);
-        glow.addColorStop(0, "rgba(255,214,180,.9)");
+        var pa = proj[pulse.a], pb = proj[pulse.b];
+        var x = pa.x + (pb.x - pa.x) * pulse.t;
+        var y = pa.y + (pb.y - pa.y) * pulse.t;
+        var depth = (pa.t + pb.t) / 2;
+        var rad = 5 + depth * 5;
+        var glow = ctx.createRadialGradient(x, y, 0, x, y, rad);
+        glow.addColorStop(0, "rgba(255,221,195," + (.55 + depth * .4) + ")");
         glow.addColorStop(1, "rgba(255,100,82,0)");
         ctx.fillStyle = glow;
-        ctx.beginPath(); ctx.arc(x, y, 8, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(x, y, 1.7, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(255,238,225,.95)";
+        ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(x, y, 1.3 + depth * 1.1, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255,240,228," + (.7 + depth * .3) + ")";
         ctx.fill();
       }
 
-      /* nodes, back to front, flashing ones light up like firing neurons */
-      for (var i = 0; i < N; i++) {
-        var n = nodes[i], flash = flashes[i];
-        var rr = n.r + flash * 3.5;
+      /* neurons, drawn back to front — close ones bigger & glowing, far ones small & blurred */
+      for (var oi = 0; oi < order.length; oi++) {
+        var i = order[oi];
+        var pr = proj[i], flash = flashes[i];
+        var rr = (1 + pr.t * 2.6) + flash * 3.2;
         ctx.save();
         if (flash > .05) {
           ctx.shadowColor = "rgba(255,225,195," + Math.min(1, flash) + ")";
           ctx.shadowBlur = 8 + flash * 26;
-        } else if (n.z < .45) {
-          ctx.filter = "blur(" + ((.45 - n.z) * 3.2) + "px)";
+        } else if (pr.t < .4) {
+          ctx.filter = "blur(" + ((.4 - pr.t) * 3.4) + "px)";
         } else {
-          ctx.shadowColor = "rgba(255,100,82,.85)";
-          ctx.shadowBlur = (n.z - .45) * 18;
+          ctx.shadowColor = "rgba(255,100,82,.8)";
+          ctx.shadowBlur = (pr.t - .4) * 16;
         }
         ctx.beginPath();
-        ctx.arc(n.x, n.y, rr, 0, Math.PI * 2);
+        ctx.arc(pr.x, pr.y, rr, 0, Math.PI * 2);
         ctx.fillStyle = flash > .05
-          ? "rgba(255,232,214," + Math.min(1, .45 + flash * .6) + ")"
-          : "rgba(255,100,82," + (.14 + n.z * .58) + ")";
+          ? "rgba(255,232,214," + Math.min(1, .4 + flash * .6) + ")"
+          : "rgba(255,110,90," + (.12 + pr.t * .55) + ")";
         ctx.fill();
         ctx.restore();
       }
@@ -1220,27 +1300,61 @@ export function renderAnalyzePage() {
     } catch (e) { window.__shiaSessionId = null; }
   })();
 
-  /* neural network canvas */
+    /* 3D animated brain — neurons positioned on a brain silhouette, slowly rotating */
   (function () {
     var canvas = document.getElementById("nn");
     var ctx = canvas.getContext("2d");
-    var N = 60, DIST = 170, nodes = [], pulses = [], flashes = [], stars = [];
+
+    var N = 130, LINK_DIST = 48;
+    var FOCAL = 420, CAM_DIST = 480;
+    var nodes = [], adjacency = [], pulses = [], flashes = [], stars = [];
+    var proj = [], order = [];
+    var rotation = 0, scaleMin = 1, scaleMax = 1;
+
     function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+
+    function brainPoint() {
+      var side = Math.random() < .5 ? -1 : 1;
+      var u = Math.random(), v = Math.random();
+      var theta = 2 * Math.PI * u;
+      var phi = Math.acos(2 * v - 1);
+      var lx = Math.sin(phi) * Math.cos(theta);
+      var ly = Math.cos(phi);
+      var lz = Math.sin(phi) * Math.sin(theta);
+      if (side * lx < 0) lx *= .3;            /* flatten medial face -> longitudinal fissure */
+      var rx = 84, ry = 116, rz = 124;
+      return { x: side * 54 + lx * rx, y: ly * ry - 8, z: lz * rz };
+    }
+
     function init() {
       nodes = [];
+      for (var i = 0; i < N; i++) nodes.push(brainPoint());
+
+      adjacency = [];
+      for (var i = 0; i < N; i++) adjacency.push([]);
+      for (var i = 0; i < N; i++) {
+        for (var j = i + 1; j < N; j++) {
+          var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y, dz = nodes[i].z - nodes[j].z;
+          if (Math.sqrt(dx * dx + dy * dy + dz * dz) < LINK_DIST) {
+            adjacency[i].push(j);
+            adjacency[j].push(i);
+          }
+        }
+      }
+
+      var maxR = 0;
+      for (var i = 0; i < N; i++) {
+        var r = Math.sqrt(nodes[i].x * nodes[i].x + nodes[i].z * nodes[i].z);
+        if (r > maxR) maxR = r;
+      }
+      scaleMin = FOCAL / (CAM_DIST + maxR);
+      scaleMax = FOCAL / (CAM_DIST - maxR);
+
       pulses = [];
       flashes = new Array(N).fill(0);
-      for (var i = 0; i < N; i++) {
-        var z = Math.random();
-        nodes.push({
-          x: Math.random() * innerWidth, y: Math.random() * innerHeight,
-          vx: (Math.random() - .5) * (.12 + z * .5),
-          vy: (Math.random() - .5) * (.12 + z * .5),
-          r: 1 + z * 3,
-          z: z
-        });
-      }
-      nodes.sort(function (a, b) { return a.z - b.z; });
+      proj = new Array(N);
+      order = [];
+      for (var i = 0; i < N; i++) order.push(i);
 
       stars = [];
       var starCount = Math.floor((innerWidth * innerHeight) / 4200);
@@ -1256,6 +1370,7 @@ export function renderAnalyzePage() {
         });
       }
     }
+
     function drawStars(now) {
       for (var i = 0; i < stars.length; i++) {
         var st = stars[i];
@@ -1267,91 +1382,96 @@ export function renderAnalyzePage() {
         ctx.fill();
       }
     }
-    function neighborsOf(i) {
-      var list = [];
-      for (var j = 0; j < N; j++) {
-        if (j === i) continue;
-        var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
-        if (Math.sqrt(dx * dx + dy * dy) < DIST) list.push(j);
-      }
-      return list;
-    }
+
     function fire(i) {
       flashes[i] = 1;
-      if (Math.random() < .8) {
-        var list = neighborsOf(i);
-        if (list.length) {
-          var j = list[Math.floor(Math.random() * list.length)];
-          pulses.push({ a: i, b: j, t: 0, speed: .025 + Math.random() * .03 });
-        }
+      if (Math.random() < .85 && adjacency[i].length) {
+        var j = adjacency[i][Math.floor(Math.random() * adjacency[i].length)];
+        pulses.push({ a: i, b: j, t: 0, speed: .022 + Math.random() * .026 });
       }
     }
+
     function tick(now) {
       now = now || performance.now();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawStars(now);
 
+      rotation += .0028;
+      var cos = Math.cos(rotation), sin = Math.sin(rotation);
+      var cx = canvas.width / 2, cy = canvas.height / 2;
+
       for (var i = 0; i < N; i++) {
-        nodes[i].x += nodes[i].vx; nodes[i].y += nodes[i].vy;
-        if (nodes[i].x < 0 || nodes[i].x > canvas.width)  nodes[i].vx *= -1;
-        if (nodes[i].y < 0 || nodes[i].y > canvas.height) nodes[i].vy *= -1;
+        var n = nodes[i];
+        var xr = n.x * cos + n.z * sin;
+        var zr = -n.x * sin + n.z * cos;
+        var sc = FOCAL / (CAM_DIST + zr);
+        var t = (sc - scaleMin) / (scaleMax - scaleMin);
+        if (t < 0) t = 0; else if (t > 1) t = 1;
+        proj[i] = { x: cx + xr * sc, y: cy + n.y * sc, scale: sc, t: t };
         flashes[i] = Math.max(0, flashes[i] - .035);
       }
-      if (Math.random() < .05) fire(Math.floor(Math.random() * N));
+      order.sort(function (a, b) { return proj[a].scale - proj[b].scale; });
 
-      /* synapse connections — brighten when either end is firing */
-      for (var i = 0; i < N; i++) for (var j = i + 1; j < N; j++) {
-        var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
-        var d = Math.sqrt(dx * dx + dy * dy);
-        if (d < DIST) {
-          var depth = (nodes[i].z + nodes[j].z) / 2;
-          var boost = Math.max(flashes[i], flashes[j]) * .5;
+      if (Math.random() < .07) fire(Math.floor(Math.random() * N));
+
+      /* synapse mesh — brighter & thicker the closer to the viewer, glows when firing */
+      for (var i = 0; i < N; i++) {
+        var nb = adjacency[i];
+        for (var k = 0; k < nb.length; k++) {
+          var j = nb[k];
+          if (j < i) continue;
+          var pa = proj[i], pb = proj[j];
+          var depth = (pa.t + pb.t) / 2;
+          var boost = Math.max(flashes[i], flashes[j]) * .55;
           ctx.beginPath();
-          ctx.strokeStyle = "rgba(255,100,82," + ((1 - d / DIST) * (.08 + depth * .34 + boost)) + ")";
-          ctx.lineWidth = .5 + depth * .9 + boost * 1.2;
-          ctx.moveTo(nodes[i].x, nodes[i].y);
-          ctx.lineTo(nodes[j].x, nodes[j].y);
+          ctx.strokeStyle = "rgba(255,110,90," + (.05 + depth * .3 + boost) + ")";
+          ctx.lineWidth = .4 + depth * 1.1 + boost * 1.3;
+          ctx.moveTo(pa.x, pa.y);
+          ctx.lineTo(pb.x, pb.y);
           ctx.stroke();
         }
       }
 
-      /* traveling impulses with glowing trail */
+      /* electrical impulses travelling along synapses with a glowing trail */
       for (var p = pulses.length - 1; p >= 0; p--) {
         var pulse = pulses[p];
         pulse.t += pulse.speed;
         if (pulse.t >= 1) { fire(pulse.b); pulses.splice(p, 1); continue; }
-        var a = nodes[pulse.a], b = nodes[pulse.b];
-        var x = a.x + (b.x - a.x) * pulse.t;
-        var y = a.y + (b.y - a.y) * pulse.t;
-        var glow = ctx.createRadialGradient(x, y, 0, x, y, 8);
-        glow.addColorStop(0, "rgba(255,214,180,.9)");
+        var pa = proj[pulse.a], pb = proj[pulse.b];
+        var x = pa.x + (pb.x - pa.x) * pulse.t;
+        var y = pa.y + (pb.y - pa.y) * pulse.t;
+        var depth = (pa.t + pb.t) / 2;
+        var rad = 5 + depth * 5;
+        var glow = ctx.createRadialGradient(x, y, 0, x, y, rad);
+        glow.addColorStop(0, "rgba(255,221,195," + (.55 + depth * .4) + ")");
         glow.addColorStop(1, "rgba(255,100,82,0)");
         ctx.fillStyle = glow;
-        ctx.beginPath(); ctx.arc(x, y, 8, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(x, y, 1.7, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(255,238,225,.95)";
+        ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(x, y, 1.3 + depth * 1.1, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255,240,228," + (.7 + depth * .3) + ")";
         ctx.fill();
       }
 
-      /* nodes, back to front, flashing ones light up like firing neurons */
-      for (var i = 0; i < N; i++) {
-        var n = nodes[i], flash = flashes[i];
-        var rr = n.r + flash * 3.5;
+      /* neurons, drawn back to front — close ones bigger & glowing, far ones small & blurred */
+      for (var oi = 0; oi < order.length; oi++) {
+        var i = order[oi];
+        var pr = proj[i], flash = flashes[i];
+        var rr = (1 + pr.t * 2.6) + flash * 3.2;
         ctx.save();
         if (flash > .05) {
           ctx.shadowColor = "rgba(255,225,195," + Math.min(1, flash) + ")";
           ctx.shadowBlur = 8 + flash * 26;
-        } else if (n.z < .45) {
-          ctx.filter = "blur(" + ((.45 - n.z) * 3.2) + "px)";
+        } else if (pr.t < .4) {
+          ctx.filter = "blur(" + ((.4 - pr.t) * 3.4) + "px)";
         } else {
-          ctx.shadowColor = "rgba(255,100,82,.85)";
-          ctx.shadowBlur = (n.z - .45) * 18;
+          ctx.shadowColor = "rgba(255,100,82,.8)";
+          ctx.shadowBlur = (pr.t - .4) * 16;
         }
         ctx.beginPath();
-        ctx.arc(n.x, n.y, rr, 0, Math.PI * 2);
+        ctx.arc(pr.x, pr.y, rr, 0, Math.PI * 2);
         ctx.fillStyle = flash > .05
-          ? "rgba(255,232,214," + Math.min(1, .45 + flash * .6) + ")"
-          : "rgba(255,100,82," + (.14 + n.z * .58) + ")";
+          ? "rgba(255,232,214," + Math.min(1, .4 + flash * .6) + ")"
+          : "rgba(255,110,90," + (.12 + pr.t * .55) + ")";
         ctx.fill();
         ctx.restore();
       }
@@ -1606,27 +1726,61 @@ export function renderDashboardPage({ userId, previews, payments, sprints }) {
     } catch (e) { window.__shiaSessionId = null; }
   })();
 
-  /* neural network canvas */
+    /* 3D animated brain — neurons positioned on a brain silhouette, slowly rotating */
   (function () {
     var canvas = document.getElementById("nn");
     var ctx = canvas.getContext("2d");
-    var N = 60, DIST = 170, nodes = [], pulses = [], flashes = [], stars = [];
+
+    var N = 130, LINK_DIST = 48;
+    var FOCAL = 420, CAM_DIST = 480;
+    var nodes = [], adjacency = [], pulses = [], flashes = [], stars = [];
+    var proj = [], order = [];
+    var rotation = 0, scaleMin = 1, scaleMax = 1;
+
     function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+
+    function brainPoint() {
+      var side = Math.random() < .5 ? -1 : 1;
+      var u = Math.random(), v = Math.random();
+      var theta = 2 * Math.PI * u;
+      var phi = Math.acos(2 * v - 1);
+      var lx = Math.sin(phi) * Math.cos(theta);
+      var ly = Math.cos(phi);
+      var lz = Math.sin(phi) * Math.sin(theta);
+      if (side * lx < 0) lx *= .3;            /* flatten medial face -> longitudinal fissure */
+      var rx = 84, ry = 116, rz = 124;
+      return { x: side * 54 + lx * rx, y: ly * ry - 8, z: lz * rz };
+    }
+
     function init() {
       nodes = [];
+      for (var i = 0; i < N; i++) nodes.push(brainPoint());
+
+      adjacency = [];
+      for (var i = 0; i < N; i++) adjacency.push([]);
+      for (var i = 0; i < N; i++) {
+        for (var j = i + 1; j < N; j++) {
+          var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y, dz = nodes[i].z - nodes[j].z;
+          if (Math.sqrt(dx * dx + dy * dy + dz * dz) < LINK_DIST) {
+            adjacency[i].push(j);
+            adjacency[j].push(i);
+          }
+        }
+      }
+
+      var maxR = 0;
+      for (var i = 0; i < N; i++) {
+        var r = Math.sqrt(nodes[i].x * nodes[i].x + nodes[i].z * nodes[i].z);
+        if (r > maxR) maxR = r;
+      }
+      scaleMin = FOCAL / (CAM_DIST + maxR);
+      scaleMax = FOCAL / (CAM_DIST - maxR);
+
       pulses = [];
       flashes = new Array(N).fill(0);
-      for (var i = 0; i < N; i++) {
-        var z = Math.random();
-        nodes.push({
-          x: Math.random() * innerWidth, y: Math.random() * innerHeight,
-          vx: (Math.random() - .5) * (.12 + z * .5),
-          vy: (Math.random() - .5) * (.12 + z * .5),
-          r: 1 + z * 3,
-          z: z
-        });
-      }
-      nodes.sort(function (a, b) { return a.z - b.z; });
+      proj = new Array(N);
+      order = [];
+      for (var i = 0; i < N; i++) order.push(i);
 
       stars = [];
       var starCount = Math.floor((innerWidth * innerHeight) / 4200);
@@ -1642,6 +1796,7 @@ export function renderDashboardPage({ userId, previews, payments, sprints }) {
         });
       }
     }
+
     function drawStars(now) {
       for (var i = 0; i < stars.length; i++) {
         var st = stars[i];
@@ -1653,91 +1808,96 @@ export function renderDashboardPage({ userId, previews, payments, sprints }) {
         ctx.fill();
       }
     }
-    function neighborsOf(i) {
-      var list = [];
-      for (var j = 0; j < N; j++) {
-        if (j === i) continue;
-        var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
-        if (Math.sqrt(dx * dx + dy * dy) < DIST) list.push(j);
-      }
-      return list;
-    }
+
     function fire(i) {
       flashes[i] = 1;
-      if (Math.random() < .8) {
-        var list = neighborsOf(i);
-        if (list.length) {
-          var j = list[Math.floor(Math.random() * list.length)];
-          pulses.push({ a: i, b: j, t: 0, speed: .025 + Math.random() * .03 });
-        }
+      if (Math.random() < .85 && adjacency[i].length) {
+        var j = adjacency[i][Math.floor(Math.random() * adjacency[i].length)];
+        pulses.push({ a: i, b: j, t: 0, speed: .022 + Math.random() * .026 });
       }
     }
+
     function tick(now) {
       now = now || performance.now();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawStars(now);
 
+      rotation += .0028;
+      var cos = Math.cos(rotation), sin = Math.sin(rotation);
+      var cx = canvas.width / 2, cy = canvas.height / 2;
+
       for (var i = 0; i < N; i++) {
-        nodes[i].x += nodes[i].vx; nodes[i].y += nodes[i].vy;
-        if (nodes[i].x < 0 || nodes[i].x > canvas.width)  nodes[i].vx *= -1;
-        if (nodes[i].y < 0 || nodes[i].y > canvas.height) nodes[i].vy *= -1;
+        var n = nodes[i];
+        var xr = n.x * cos + n.z * sin;
+        var zr = -n.x * sin + n.z * cos;
+        var sc = FOCAL / (CAM_DIST + zr);
+        var t = (sc - scaleMin) / (scaleMax - scaleMin);
+        if (t < 0) t = 0; else if (t > 1) t = 1;
+        proj[i] = { x: cx + xr * sc, y: cy + n.y * sc, scale: sc, t: t };
         flashes[i] = Math.max(0, flashes[i] - .035);
       }
-      if (Math.random() < .05) fire(Math.floor(Math.random() * N));
+      order.sort(function (a, b) { return proj[a].scale - proj[b].scale; });
 
-      /* synapse connections — brighten when either end is firing */
-      for (var i = 0; i < N; i++) for (var j = i + 1; j < N; j++) {
-        var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
-        var d = Math.sqrt(dx * dx + dy * dy);
-        if (d < DIST) {
-          var depth = (nodes[i].z + nodes[j].z) / 2;
-          var boost = Math.max(flashes[i], flashes[j]) * .5;
+      if (Math.random() < .07) fire(Math.floor(Math.random() * N));
+
+      /* synapse mesh — brighter & thicker the closer to the viewer, glows when firing */
+      for (var i = 0; i < N; i++) {
+        var nb = adjacency[i];
+        for (var k = 0; k < nb.length; k++) {
+          var j = nb[k];
+          if (j < i) continue;
+          var pa = proj[i], pb = proj[j];
+          var depth = (pa.t + pb.t) / 2;
+          var boost = Math.max(flashes[i], flashes[j]) * .55;
           ctx.beginPath();
-          ctx.strokeStyle = "rgba(255,100,82," + ((1 - d / DIST) * (.08 + depth * .34 + boost)) + ")";
-          ctx.lineWidth = .5 + depth * .9 + boost * 1.2;
-          ctx.moveTo(nodes[i].x, nodes[i].y);
-          ctx.lineTo(nodes[j].x, nodes[j].y);
+          ctx.strokeStyle = "rgba(255,110,90," + (.05 + depth * .3 + boost) + ")";
+          ctx.lineWidth = .4 + depth * 1.1 + boost * 1.3;
+          ctx.moveTo(pa.x, pa.y);
+          ctx.lineTo(pb.x, pb.y);
           ctx.stroke();
         }
       }
 
-      /* traveling impulses with glowing trail */
+      /* electrical impulses travelling along synapses with a glowing trail */
       for (var p = pulses.length - 1; p >= 0; p--) {
         var pulse = pulses[p];
         pulse.t += pulse.speed;
         if (pulse.t >= 1) { fire(pulse.b); pulses.splice(p, 1); continue; }
-        var a = nodes[pulse.a], b = nodes[pulse.b];
-        var x = a.x + (b.x - a.x) * pulse.t;
-        var y = a.y + (b.y - a.y) * pulse.t;
-        var glow = ctx.createRadialGradient(x, y, 0, x, y, 8);
-        glow.addColorStop(0, "rgba(255,214,180,.9)");
+        var pa = proj[pulse.a], pb = proj[pulse.b];
+        var x = pa.x + (pb.x - pa.x) * pulse.t;
+        var y = pa.y + (pb.y - pa.y) * pulse.t;
+        var depth = (pa.t + pb.t) / 2;
+        var rad = 5 + depth * 5;
+        var glow = ctx.createRadialGradient(x, y, 0, x, y, rad);
+        glow.addColorStop(0, "rgba(255,221,195," + (.55 + depth * .4) + ")");
         glow.addColorStop(1, "rgba(255,100,82,0)");
         ctx.fillStyle = glow;
-        ctx.beginPath(); ctx.arc(x, y, 8, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(x, y, 1.7, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(255,238,225,.95)";
+        ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(x, y, 1.3 + depth * 1.1, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255,240,228," + (.7 + depth * .3) + ")";
         ctx.fill();
       }
 
-      /* nodes, back to front, flashing ones light up like firing neurons */
-      for (var i = 0; i < N; i++) {
-        var n = nodes[i], flash = flashes[i];
-        var rr = n.r + flash * 3.5;
+      /* neurons, drawn back to front — close ones bigger & glowing, far ones small & blurred */
+      for (var oi = 0; oi < order.length; oi++) {
+        var i = order[oi];
+        var pr = proj[i], flash = flashes[i];
+        var rr = (1 + pr.t * 2.6) + flash * 3.2;
         ctx.save();
         if (flash > .05) {
           ctx.shadowColor = "rgba(255,225,195," + Math.min(1, flash) + ")";
           ctx.shadowBlur = 8 + flash * 26;
-        } else if (n.z < .45) {
-          ctx.filter = "blur(" + ((.45 - n.z) * 3.2) + "px)";
+        } else if (pr.t < .4) {
+          ctx.filter = "blur(" + ((.4 - pr.t) * 3.4) + "px)";
         } else {
-          ctx.shadowColor = "rgba(255,100,82,.85)";
-          ctx.shadowBlur = (n.z - .45) * 18;
+          ctx.shadowColor = "rgba(255,100,82,.8)";
+          ctx.shadowBlur = (pr.t - .4) * 16;
         }
         ctx.beginPath();
-        ctx.arc(n.x, n.y, rr, 0, Math.PI * 2);
+        ctx.arc(pr.x, pr.y, rr, 0, Math.PI * 2);
         ctx.fillStyle = flash > .05
-          ? "rgba(255,232,214," + Math.min(1, .45 + flash * .6) + ")"
-          : "rgba(255,100,82," + (.14 + n.z * .58) + ")";
+          ? "rgba(255,232,214," + Math.min(1, .4 + flash * .6) + ")"
+          : "rgba(255,110,90," + (.12 + pr.t * .55) + ")";
         ctx.fill();
         ctx.restore();
       }
