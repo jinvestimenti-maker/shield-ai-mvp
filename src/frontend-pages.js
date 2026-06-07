@@ -223,20 +223,27 @@ export function renderGeneratePage() {
   <link href="https://api.fontshare.com/v2/css?f[]=clash-display@600,700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg:  #faf7f2;
-      --bg2: #f3ede3;
-      --ink:  #1a120b;
-      --ink2: #4a3728;
-      --ink3: #8a6f5e;
-      --line: #e0d4c3;
-      --green:  #166534;
-      --orange: #9a3412;
-      --blue:   #1e40af;
-      --a1: #c13d2a;
+      --bg:  #1a1d2e;
+      --bg2: #242842;
+      --ink:  #eef0f7;
+      --ink2: #c2c6da;
+      --ink3: #8d92ad;
+      --line: #353a56;
+      --green:  #4ade80;
+      --orange: #fb923c;
+      --blue:   #60a5fa;
+      --a1: #ff6452;
       --a2: #f59e0b;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: "Plus Jakarta Sans", sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
+    body {
+      font-family: "Plus Jakarta Sans", sans-serif; color: var(--ink); min-height: 100vh;
+      background:
+        radial-gradient(circle at 12% 8%,  rgba(255,100,82,.10) 0%, transparent 38%),
+        radial-gradient(circle at 88% 18%, rgba(245,158,11,.08) 0%, transparent 34%),
+        radial-gradient(circle at 50% 96%, rgba(96,165,250,.07) 0%, transparent 42%),
+        var(--bg);
+    }
     #nn { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
     .page { position: relative; z-index: 1; width: min(640px, 94vw); margin: 0 auto; padding: 2.5rem 0 5rem; }
 
@@ -264,7 +271,7 @@ export function renderGeneratePage() {
     label { display: block; font-size: .82rem; font-weight: 700; color: var(--ink2); margin-bottom: .45rem; }
     input, select, textarea {
       width: 100%; font: inherit; font-size: .95rem; color: var(--ink);
-      background: #fff; border: 1px solid var(--line); border-radius: 10px;
+      background: var(--bg2); border: 1px solid var(--line); border-radius: 10px;
       padding: .75rem .9rem; transition: border-color .15s;
     }
     input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a1); }
@@ -284,7 +291,7 @@ export function renderGeneratePage() {
     .actions-row { display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; margin-top: .5rem; }
 
     /* error */
-    .error { color: #991b1b; font-weight: 600; font-size: .9rem; min-height: 1.4rem; margin-top: .9rem; }
+    .error { color: #f87171; font-weight: 600; font-size: .9rem; min-height: 1.4rem; margin-top: .9rem; }
   </style>
 </head>
 <body>
@@ -367,17 +374,21 @@ export function renderGeneratePage() {
   (function () {
     var canvas = document.getElementById("nn");
     var ctx = canvas.getContext("2d");
-    var N = 55, DIST = 180, nodes = [];
+    var N = 60, DIST = 170, nodes = [];
     function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
     function init() {
       nodes = [];
       for (var i = 0; i < N; i++) {
+        var z = Math.random();
         nodes.push({
           x: Math.random() * innerWidth, y: Math.random() * innerHeight,
-          vx: (Math.random() - .5) * .4, vy: (Math.random() - .5) * .4,
-          r: 1.8 + Math.random() * 1.5
+          vx: (Math.random() - .5) * (.12 + z * .5),
+          vy: (Math.random() - .5) * (.12 + z * .5),
+          r: 1 + z * 3,
+          z: z
         });
       }
+      nodes.sort(function (a, b) { return a.z - b.z; });
     }
     function tick() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -390,19 +401,29 @@ export function renderGeneratePage() {
         var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
         var d = Math.sqrt(dx * dx + dy * dy);
         if (d < DIST) {
+          var depth = (nodes[i].z + nodes[j].z) / 2;
           ctx.beginPath();
-          ctx.strokeStyle = "rgba(193,61,42," + ((1 - d / DIST) * .22) + ")";
-          ctx.lineWidth = .8;
+          ctx.strokeStyle = "rgba(255,100,82," + ((1 - d / DIST) * (.08 + depth * .34)) + ")";
+          ctx.lineWidth = .5 + depth * .9;
           ctx.moveTo(nodes[i].x, nodes[i].y);
           ctx.lineTo(nodes[j].x, nodes[j].y);
           ctx.stroke();
         }
       }
       for (var i = 0; i < N; i++) {
+        var n = nodes[i];
+        ctx.save();
+        if (n.z < .45) {
+          ctx.filter = "blur(" + ((.45 - n.z) * 3.2) + "px)";
+        } else {
+          ctx.shadowColor = "rgba(255,100,82,.85)";
+          ctx.shadowBlur = (n.z - .45) * 18;
+        }
         ctx.beginPath();
-        ctx.arc(nodes[i].x, nodes[i].y, nodes[i].r, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(193,61,42,.32)";
+        ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255,100,82," + (.14 + n.z * .58) + ")";
         ctx.fill();
+        ctx.restore();
       }
       requestAnimationFrame(tick);
     }
@@ -666,20 +687,27 @@ export function renderAnalyzePage() {
   <link href="https://api.fontshare.com/v2/css?f[]=clash-display@600,700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg:  #faf7f2;
-      --bg2: #f3ede3;
-      --ink:  #1a120b;
-      --ink2: #4a3728;
-      --ink3: #8a6f5e;
-      --line: #e0d4c3;
-      --green:  #166534;
-      --orange: #9a3412;
-      --blue:   #1e40af;
-      --a1: #c13d2a;
+      --bg:  #1a1d2e;
+      --bg2: #242842;
+      --ink:  #eef0f7;
+      --ink2: #c2c6da;
+      --ink3: #8d92ad;
+      --line: #353a56;
+      --green:  #4ade80;
+      --orange: #fb923c;
+      --blue:   #60a5fa;
+      --a1: #ff6452;
       --a2: #f59e0b;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: "Plus Jakarta Sans", sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
+    body {
+      font-family: "Plus Jakarta Sans", sans-serif; color: var(--ink); min-height: 100vh;
+      background:
+        radial-gradient(circle at 12% 8%,  rgba(255,100,82,.10) 0%, transparent 38%),
+        radial-gradient(circle at 88% 18%, rgba(245,158,11,.08) 0%, transparent 34%),
+        radial-gradient(circle at 50% 96%, rgba(96,165,250,.07) 0%, transparent 42%),
+        var(--bg);
+    }
     #nn { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
     .page { position: relative; z-index: 1; width: min(880px, 94vw); margin: 0 auto; padding: 2.5rem 0 5rem; }
 
@@ -704,7 +732,7 @@ export function renderAnalyzePage() {
     @keyframes spin { to { transform: rotate(360deg); } }
 
     /* error */
-    .err { color: #991b1b; font-weight: 600; font-size: .95rem; text-align: center; min-height: 1.5rem; padding: .4rem 0; }
+    .err { color: #f87171; font-weight: 600; font-size: .95rem; text-align: center; min-height: 1.5rem; padding: .4rem 0; }
 
     /* dashboard */
     #dash { display: none; }
@@ -867,17 +895,21 @@ export function renderAnalyzePage() {
   (function () {
     var canvas = document.getElementById("nn");
     var ctx = canvas.getContext("2d");
-    var N = 40, DIST = 160, nodes = [];
+    var N = 60, DIST = 170, nodes = [];
     function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
     function init() {
       nodes = [];
       for (var i = 0; i < N; i++) {
+        var z = Math.random();
         nodes.push({
           x: Math.random() * innerWidth, y: Math.random() * innerHeight,
-          vx: (Math.random() - .5) * .4, vy: (Math.random() - .5) * .4,
-          r: 1.8 + Math.random() * 1.5
+          vx: (Math.random() - .5) * (.12 + z * .5),
+          vy: (Math.random() - .5) * (.12 + z * .5),
+          r: 1 + z * 3,
+          z: z
         });
       }
+      nodes.sort(function (a, b) { return a.z - b.z; });
     }
     function tick() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -890,19 +922,29 @@ export function renderAnalyzePage() {
         var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
         var d = Math.sqrt(dx * dx + dy * dy);
         if (d < DIST) {
+          var depth = (nodes[i].z + nodes[j].z) / 2;
           ctx.beginPath();
-          ctx.strokeStyle = "rgba(193,61,42," + ((1 - d / DIST) * .12) + ")";
-          ctx.lineWidth = .7;
+          ctx.strokeStyle = "rgba(255,100,82," + ((1 - d / DIST) * (.08 + depth * .34)) + ")";
+          ctx.lineWidth = .5 + depth * .9;
           ctx.moveTo(nodes[i].x, nodes[i].y);
           ctx.lineTo(nodes[j].x, nodes[j].y);
           ctx.stroke();
         }
       }
       for (var i = 0; i < N; i++) {
+        var n = nodes[i];
+        ctx.save();
+        if (n.z < .45) {
+          ctx.filter = "blur(" + ((.45 - n.z) * 3.2) + "px)";
+        } else {
+          ctx.shadowColor = "rgba(255,100,82,.85)";
+          ctx.shadowBlur = (n.z - .45) * 18;
+        }
         ctx.beginPath();
-        ctx.arc(nodes[i].x, nodes[i].y, nodes[i].r, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(193,61,42,.18)";
+        ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255,100,82," + (.14 + n.z * .58) + ")";
         ctx.fill();
+        ctx.restore();
       }
       requestAnimationFrame(tick);
     }
