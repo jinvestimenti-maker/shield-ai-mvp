@@ -211,58 +211,208 @@ export function renderLandingPage() {
 }
 
 export function renderGeneratePage() {
-  return renderAppShell({
-    title: "Analizza il Profilo — Shield AI",
-    heading: "Analizza il tuo Profilo",
-    subheading: "Inserisci i dati del tuo profilo TikTok per ricevere un'analisi AI istantanea.",
-    body: `
-      <section class="card">
-        <form id="generate-form">
-          <div class="split">
-            <div>
-              <label for="userId">User ID</label>
-              <input id="userId" name="userId" required placeholder="user-123" />
-            </div>
-            <div>
-              <label for="username">Username TikTok</label>
-              <input id="username" name="username" required placeholder="creator_name" />
-            </div>
-            <div>
-              <label for="language">Lingua dei contenuti</label>
-              <input id="language" name="language" value="it" required />
-            </div>
-            <div>
-              <label for="creatorLevel">Livello creator</label>
-              <select id="creatorLevel" name="creatorLevel">
-                <option value="beginner">beginner</option>
-                <option value="active" selected>active</option>
-                <option value="advanced">advanced</option>
-              </select>
-            </div>
-            <div>
-              <label for="primaryGoal">Obiettivo principale</label>
-              <select id="primaryGoal" name="primaryGoal">
-                <option value="views">views</option>
-                <option value="followers" selected>followers</option>
-                <option value="clients">clienti</option>
-                <option value="consistency">consistenza</option>
-              </select>
-            </div>
-            <div>
-              <label for="niche">Nicchia</label>
-              <input id="niche" name="niche" required placeholder="fitness, SaaS, produttività…" />
-            </div>
-          </div>
-          <label for="bio">Bio attuale</label>
-          <textarea id="bio" name="bio" rows="3" required placeholder="Di cosa parli e per chi crei contenuti?"></textarea>
-          <div class="actions">
-            <button class="primary" type="submit">Analizza il Profilo →</button>
-          </div>
-          <p id="generate-error" class="error"></p>
-        </form>
-      </section>
-      <script>
-        const form = document.getElementById("generate-form");
+  return `<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Analizza il Profilo — Shield AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-display@600,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:  #faf7f2;
+      --bg2: #f3ede3;
+      --ink:  #1a120b;
+      --ink2: #4a3728;
+      --ink3: #8a6f5e;
+      --line: #e0d4c3;
+      --green:  #166534;
+      --orange: #9a3412;
+      --blue:   #1e40af;
+      --a1: #c13d2a;
+      --a2: #f59e0b;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: "Plus Jakarta Sans", sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
+    #nn { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+    .page { position: relative; z-index: 1; width: min(720px, 94vw); margin: 0 auto; padding: 2.5rem 0 5rem; }
+
+    /* header */
+    .hdr { display: flex; align-items: center; gap: .75rem; margin-bottom: 2.8rem; }
+    .logo-sq {
+      width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--a1) 0%, var(--a2) 100%);
+      display: grid; place-items: center;
+      font-family: "Clash Display", sans-serif; font-weight: 700; font-size: 1.1rem; color: #fff;
+    }
+    .logo-name { font-family: "Clash Display", sans-serif; font-weight: 700; font-size: 1.25rem; letter-spacing: -.02em; }
+
+    /* heading */
+    .gen-title {
+      font-family: "Clash Display", sans-serif; font-weight: 700;
+      font-size: clamp(1.7rem, 4vw, 2.5rem); letter-spacing: -.03em; margin-bottom: .3rem;
+    }
+    .gen-sub { font-size: .9rem; font-weight: 500; color: var(--ink3); margin-bottom: 2.2rem; max-width: 60ch; }
+
+    /* form */
+    .kicker { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--ink3); margin-bottom: .5rem; }
+    .field { margin-bottom: 1.2rem; }
+    .field-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.2rem; }
+    label { display: block; font-size: .82rem; font-weight: 700; color: var(--ink2); margin-bottom: .45rem; }
+    input, select, textarea {
+      width: 100%; font: inherit; font-size: .95rem; color: var(--ink);
+      background: #fff; border: 1px solid var(--line); border-radius: 10px;
+      padding: .75rem .9rem; transition: border-color .15s;
+    }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a1); }
+    textarea { resize: vertical; }
+    @media (max-width: 600px) { .field-grid { grid-template-columns: 1fr; } }
+
+    /* button */
+    .btn-primary {
+      display: inline-block; text-decoration: none; cursor: pointer; border: 0;
+      background: linear-gradient(135deg, var(--a1) 0%, #df6a3c 100%);
+      color: #fff; font-family: "Plus Jakarta Sans", sans-serif; font-weight: 700;
+      font-size: .95rem; padding: .85rem 1.8rem; border-radius: 999px; transition: opacity .15s;
+    }
+    .btn-primary:hover { opacity: .85; }
+    .btn-ghost { font-size: .88rem; color: var(--ink3); text-decoration: none; font-weight: 500; }
+    .btn-ghost:hover { color: var(--ink); }
+    .actions-row { display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; margin-top: .5rem; }
+
+    /* error */
+    .error { color: #991b1b; font-weight: 600; font-size: .9rem; min-height: 1.4rem; margin-top: .9rem; }
+  </style>
+</head>
+<body>
+
+<canvas id="nn"></canvas>
+
+<div class="page">
+
+  <header class="hdr">
+    <div class="logo-sq">S</div>
+    <span class="logo-name">Shield AI</span>
+  </header>
+
+  <p class="gen-title">Analizza il tuo Profilo</p>
+  <p class="gen-sub">Inserisci i dati del tuo profilo TikTok per ricevere un'analisi AI istantanea: punti di forza, errori da correggere e occasioni di crescita.</p>
+
+  <form id="generate-form">
+    <p class="kicker">Profilo</p>
+    <div class="field-grid">
+      <div class="field">
+        <label for="userId">User ID</label>
+        <input id="userId" name="userId" required placeholder="user-123" />
+      </div>
+      <div class="field">
+        <label for="username">Username TikTok</label>
+        <input id="username" name="username" required placeholder="creator_name" />
+      </div>
+      <div class="field">
+        <label for="language">Lingua</label>
+        <input id="language" name="language" value="it" required />
+      </div>
+      <div class="field">
+        <label for="creatorLevel">Livello creator</label>
+        <select id="creatorLevel" name="creatorLevel">
+          <option value="beginner">beginner</option>
+          <option value="active" selected>active</option>
+          <option value="advanced">advanced</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="primaryGoal">Obiettivo</label>
+        <select id="primaryGoal" name="primaryGoal">
+          <option value="views">views</option>
+          <option value="followers" selected>followers</option>
+          <option value="clients">clienti</option>
+          <option value="consistency">consistenza</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="niche">Nicchia</label>
+        <input id="niche" name="niche" required placeholder="fitness, SaaS, produttività…" />
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="bio">Bio attuale</label>
+      <textarea id="bio" name="bio" rows="3" required placeholder="Di cosa parli e per chi crei contenuti?"></textarea>
+    </div>
+
+    <div class="actions-row">
+      <button class="btn-primary" type="submit">Analizza il Profilo →</button>
+      <a class="btn-ghost" href="/">← Home</a>
+    </div>
+    <p id="generate-error" class="error"></p>
+  </form>
+
+</div>
+
+<script>
+  /* session id */
+  (function () {
+    try {
+      var k = "shia.session.id", v = localStorage.getItem(k);
+      if (!v) { v = "sess_" + Date.now() + "_" + Math.floor(Math.random() * 1e9); localStorage.setItem(k, v); }
+      window.__shiaSessionId = v;
+    } catch (e) { window.__shiaSessionId = null; }
+  })();
+
+  /* neural network canvas */
+  (function () {
+    var canvas = document.getElementById("nn");
+    var ctx = canvas.getContext("2d");
+    var N = 40, DIST = 160, nodes = [];
+    function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+    function init() {
+      nodes = [];
+      for (var i = 0; i < N; i++) {
+        nodes.push({
+          x: Math.random() * innerWidth, y: Math.random() * innerHeight,
+          vx: (Math.random() - .5) * .4, vy: (Math.random() - .5) * .4,
+          r: 1.8 + Math.random() * 1.5
+        });
+      }
+    }
+    function tick() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (var i = 0; i < N; i++) {
+        nodes[i].x += nodes[i].vx; nodes[i].y += nodes[i].vy;
+        if (nodes[i].x < 0 || nodes[i].x > canvas.width)  nodes[i].vx *= -1;
+        if (nodes[i].y < 0 || nodes[i].y > canvas.height) nodes[i].vy *= -1;
+      }
+      for (var i = 0; i < N; i++) for (var j = i + 1; j < N; j++) {
+        var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
+        var d = Math.sqrt(dx * dx + dy * dy);
+        if (d < DIST) {
+          ctx.beginPath();
+          ctx.strokeStyle = "rgba(193,61,42," + ((1 - d / DIST) * .12) + ")";
+          ctx.lineWidth = .7;
+          ctx.moveTo(nodes[i].x, nodes[i].y);
+          ctx.lineTo(nodes[j].x, nodes[j].y);
+          ctx.stroke();
+        }
+      }
+      for (var i = 0; i < N; i++) {
+        ctx.beginPath();
+        ctx.arc(nodes[i].x, nodes[i].y, nodes[i].r, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(193,61,42,.18)";
+        ctx.fill();
+      }
+      requestAnimationFrame(tick);
+    }
+    resize(); init(); tick();
+    window.addEventListener("resize", function () { resize(); });
+  })();
+
+  /* form submit */
+  (function () {
+    const form = document.getElementById("generate-form");
         const errorEl = document.getElementById("generate-error");
 
         form.addEventListener("submit", function (event) {
@@ -319,9 +469,11 @@ export function renderGeneratePage() {
             errorEl.textContent = error.message;
           }
         });
-      </script>
-    `
-  });
+  })();
+</script>
+
+</body>
+</html>`;
 }
 
 export function renderPreviewPage({ preview }) {
