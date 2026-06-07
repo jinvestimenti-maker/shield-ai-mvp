@@ -203,9 +203,10 @@ export function renderLandingPage() {
     body {
       font-family: "Plus Jakarta Sans", sans-serif; color: var(--ink); min-height: 100vh;
       background:
-        radial-gradient(circle at 12% 8%,  rgba(255,100,82,.10) 0%, transparent 38%),
-        radial-gradient(circle at 88% 18%, rgba(245,158,11,.08) 0%, transparent 34%),
-        radial-gradient(circle at 50% 96%, rgba(96,165,250,.07) 0%, transparent 42%),
+        radial-gradient(ellipse at 18% 12%, rgba(124,58,237,.20) 0%, transparent 46%),
+        radial-gradient(ellipse at 82% 8%,  rgba(96,165,250,.16) 0%, transparent 42%),
+        radial-gradient(ellipse at 70% 80%, rgba(255,100,82,.14) 0%, transparent 48%),
+        radial-gradient(ellipse at 12% 85%, rgba(124,58,237,.13) 0%, transparent 44%),
         var(--bg);
     }
     #nn { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
@@ -312,7 +313,7 @@ export function renderLandingPage() {
   (function () {
     var canvas = document.getElementById("nn");
     var ctx = canvas.getContext("2d");
-    var N = 60, DIST = 170, nodes = [], pulses = [], flashes = [];
+    var N = 60, DIST = 170, nodes = [], pulses = [], flashes = [], stars = [];
     function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
     function init() {
       nodes = [];
@@ -329,6 +330,31 @@ export function renderLandingPage() {
         });
       }
       nodes.sort(function (a, b) { return a.z - b.z; });
+
+      stars = [];
+      var starCount = Math.floor((innerWidth * innerHeight) / 4200);
+      for (var s = 0; s < starCount; s++) {
+        stars.push({
+          x: Math.random() * innerWidth,
+          y: Math.random() * innerHeight,
+          r: Math.random() * 1.3 + .25,
+          base: .2 + Math.random() * .45,
+          amp: Math.random() * .45,
+          speed: .0007 + Math.random() * .0022,
+          phase: Math.random() * Math.PI * 2
+        });
+      }
+    }
+    function drawStars(now) {
+      for (var i = 0; i < stars.length; i++) {
+        var st = stars[i];
+        var a = st.base + st.amp * Math.sin(now * st.speed + st.phase);
+        if (a < 0) a = 0; else if (a > 1) a = 1;
+        ctx.beginPath();
+        ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(228,233,255," + a.toFixed(3) + ")";
+        ctx.fill();
+      }
     }
     function neighborsOf(i) {
       var list = [];
@@ -349,8 +375,10 @@ export function renderLandingPage() {
         }
       }
     }
-    function tick() {
+    function tick(now) {
+      now = now || performance.now();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawStars(now);
 
       for (var i = 0; i < N; i++) {
         nodes[i].x += nodes[i].vx; nodes[i].y += nodes[i].vy;
@@ -457,9 +485,10 @@ export function renderGeneratePage() {
     body {
       font-family: "Plus Jakarta Sans", sans-serif; color: var(--ink); min-height: 100vh;
       background:
-        radial-gradient(circle at 12% 8%,  rgba(255,100,82,.10) 0%, transparent 38%),
-        radial-gradient(circle at 88% 18%, rgba(245,158,11,.08) 0%, transparent 34%),
-        radial-gradient(circle at 50% 96%, rgba(96,165,250,.07) 0%, transparent 42%),
+        radial-gradient(ellipse at 18% 12%, rgba(124,58,237,.20) 0%, transparent 46%),
+        radial-gradient(ellipse at 82% 8%,  rgba(96,165,250,.16) 0%, transparent 42%),
+        radial-gradient(ellipse at 70% 80%, rgba(255,100,82,.14) 0%, transparent 48%),
+        radial-gradient(ellipse at 12% 85%, rgba(124,58,237,.13) 0%, transparent 44%),
         var(--bg);
     }
     #nn { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
@@ -592,7 +621,7 @@ export function renderGeneratePage() {
   (function () {
     var canvas = document.getElementById("nn");
     var ctx = canvas.getContext("2d");
-    var N = 60, DIST = 170, nodes = [], pulses = [], flashes = [];
+    var N = 60, DIST = 170, nodes = [], pulses = [], flashes = [], stars = [];
     function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
     function init() {
       nodes = [];
@@ -609,6 +638,31 @@ export function renderGeneratePage() {
         });
       }
       nodes.sort(function (a, b) { return a.z - b.z; });
+
+      stars = [];
+      var starCount = Math.floor((innerWidth * innerHeight) / 4200);
+      for (var s = 0; s < starCount; s++) {
+        stars.push({
+          x: Math.random() * innerWidth,
+          y: Math.random() * innerHeight,
+          r: Math.random() * 1.3 + .25,
+          base: .2 + Math.random() * .45,
+          amp: Math.random() * .45,
+          speed: .0007 + Math.random() * .0022,
+          phase: Math.random() * Math.PI * 2
+        });
+      }
+    }
+    function drawStars(now) {
+      for (var i = 0; i < stars.length; i++) {
+        var st = stars[i];
+        var a = st.base + st.amp * Math.sin(now * st.speed + st.phase);
+        if (a < 0) a = 0; else if (a > 1) a = 1;
+        ctx.beginPath();
+        ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(228,233,255," + a.toFixed(3) + ")";
+        ctx.fill();
+      }
     }
     function neighborsOf(i) {
       var list = [];
@@ -629,8 +683,10 @@ export function renderGeneratePage() {
         }
       }
     }
-    function tick() {
+    function tick(now) {
+      now = now || performance.now();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawStars(now);
 
       for (var i = 0; i < N; i++) {
         nodes[i].x += nodes[i].vx; nodes[i].y += nodes[i].vy;
@@ -975,9 +1031,10 @@ export function renderAnalyzePage() {
     body {
       font-family: "Plus Jakarta Sans", sans-serif; color: var(--ink); min-height: 100vh;
       background:
-        radial-gradient(circle at 12% 8%,  rgba(255,100,82,.10) 0%, transparent 38%),
-        radial-gradient(circle at 88% 18%, rgba(245,158,11,.08) 0%, transparent 34%),
-        radial-gradient(circle at 50% 96%, rgba(96,165,250,.07) 0%, transparent 42%),
+        radial-gradient(ellipse at 18% 12%, rgba(124,58,237,.20) 0%, transparent 46%),
+        radial-gradient(ellipse at 82% 8%,  rgba(96,165,250,.16) 0%, transparent 42%),
+        radial-gradient(ellipse at 70% 80%, rgba(255,100,82,.14) 0%, transparent 48%),
+        radial-gradient(ellipse at 12% 85%, rgba(124,58,237,.13) 0%, transparent 44%),
         var(--bg);
     }
     #nn { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
@@ -1167,7 +1224,7 @@ export function renderAnalyzePage() {
   (function () {
     var canvas = document.getElementById("nn");
     var ctx = canvas.getContext("2d");
-    var N = 60, DIST = 170, nodes = [], pulses = [], flashes = [];
+    var N = 60, DIST = 170, nodes = [], pulses = [], flashes = [], stars = [];
     function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
     function init() {
       nodes = [];
@@ -1184,6 +1241,31 @@ export function renderAnalyzePage() {
         });
       }
       nodes.sort(function (a, b) { return a.z - b.z; });
+
+      stars = [];
+      var starCount = Math.floor((innerWidth * innerHeight) / 4200);
+      for (var s = 0; s < starCount; s++) {
+        stars.push({
+          x: Math.random() * innerWidth,
+          y: Math.random() * innerHeight,
+          r: Math.random() * 1.3 + .25,
+          base: .2 + Math.random() * .45,
+          amp: Math.random() * .45,
+          speed: .0007 + Math.random() * .0022,
+          phase: Math.random() * Math.PI * 2
+        });
+      }
+    }
+    function drawStars(now) {
+      for (var i = 0; i < stars.length; i++) {
+        var st = stars[i];
+        var a = st.base + st.amp * Math.sin(now * st.speed + st.phase);
+        if (a < 0) a = 0; else if (a > 1) a = 1;
+        ctx.beginPath();
+        ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(228,233,255," + a.toFixed(3) + ")";
+        ctx.fill();
+      }
     }
     function neighborsOf(i) {
       var list = [];
@@ -1204,8 +1286,10 @@ export function renderAnalyzePage() {
         }
       }
     }
-    function tick() {
+    function tick(now) {
+      now = now || performance.now();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawStars(now);
 
       for (var i = 0; i < N; i++) {
         nodes[i].x += nodes[i].vx; nodes[i].y += nodes[i].vy;
@@ -1383,9 +1467,10 @@ export function renderDashboardPage({ userId, previews, payments, sprints }) {
     body {
       font-family: "Plus Jakarta Sans", sans-serif; color: var(--ink); min-height: 100vh;
       background:
-        radial-gradient(circle at 12% 8%,  rgba(255,100,82,.10) 0%, transparent 38%),
-        radial-gradient(circle at 88% 18%, rgba(245,158,11,.08) 0%, transparent 34%),
-        radial-gradient(circle at 50% 96%, rgba(96,165,250,.07) 0%, transparent 42%),
+        radial-gradient(ellipse at 18% 12%, rgba(124,58,237,.20) 0%, transparent 46%),
+        radial-gradient(ellipse at 82% 8%,  rgba(96,165,250,.16) 0%, transparent 42%),
+        radial-gradient(ellipse at 70% 80%, rgba(255,100,82,.14) 0%, transparent 48%),
+        radial-gradient(ellipse at 12% 85%, rgba(124,58,237,.13) 0%, transparent 44%),
         var(--bg);
     }
     #nn { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
@@ -1525,7 +1610,7 @@ export function renderDashboardPage({ userId, previews, payments, sprints }) {
   (function () {
     var canvas = document.getElementById("nn");
     var ctx = canvas.getContext("2d");
-    var N = 60, DIST = 170, nodes = [], pulses = [], flashes = [];
+    var N = 60, DIST = 170, nodes = [], pulses = [], flashes = [], stars = [];
     function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
     function init() {
       nodes = [];
@@ -1542,6 +1627,31 @@ export function renderDashboardPage({ userId, previews, payments, sprints }) {
         });
       }
       nodes.sort(function (a, b) { return a.z - b.z; });
+
+      stars = [];
+      var starCount = Math.floor((innerWidth * innerHeight) / 4200);
+      for (var s = 0; s < starCount; s++) {
+        stars.push({
+          x: Math.random() * innerWidth,
+          y: Math.random() * innerHeight,
+          r: Math.random() * 1.3 + .25,
+          base: .2 + Math.random() * .45,
+          amp: Math.random() * .45,
+          speed: .0007 + Math.random() * .0022,
+          phase: Math.random() * Math.PI * 2
+        });
+      }
+    }
+    function drawStars(now) {
+      for (var i = 0; i < stars.length; i++) {
+        var st = stars[i];
+        var a = st.base + st.amp * Math.sin(now * st.speed + st.phase);
+        if (a < 0) a = 0; else if (a > 1) a = 1;
+        ctx.beginPath();
+        ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(228,233,255," + a.toFixed(3) + ")";
+        ctx.fill();
+      }
     }
     function neighborsOf(i) {
       var list = [];
@@ -1562,8 +1672,10 @@ export function renderDashboardPage({ userId, previews, payments, sprints }) {
         }
       }
     }
-    function tick() {
+    function tick(now) {
+      now = now || performance.now();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawStars(now);
 
       for (var i = 0; i < N; i++) {
         nodes[i].x += nodes[i].vx; nodes[i].y += nodes[i].vy;
