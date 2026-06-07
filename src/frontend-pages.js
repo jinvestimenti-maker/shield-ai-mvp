@@ -272,13 +272,29 @@ export function renderGeneratePage() {
 
           const userId = String(formData.get("userId")).trim();
           const username = String(formData.get("username")).trim().replace(/^@/, "");
+          const bio = String(formData.get("bio")).trim();
+          const language = String(formData.get("language")).trim();
+
+          if (!/^[A-Za-z0-9._]{2,30}$/.test(username)) {
+            errorEl.textContent = "Username TikTok non valido: usa 2-30 caratteri (lettere, numeri, punti, underscore).";
+            return;
+          }
+          if (bio.length < 5 || bio.length > 300) {
+            errorEl.textContent = "Bio non valida: deve contenere tra 5 e 300 caratteri.";
+            return;
+          }
+          if (!/^[a-z]{2}(-[A-Z]{2})?$/.test(language)) {
+            errorEl.textContent = "Lingua non valida: usa il formato 'it' oppure 'it-IT'.";
+            return;
+          }
+
           const creatorInput = {
             source: "guided_fallback",
             profile: {
               username,
               profileUrl: "https://www.tiktok.com/@" + username,
-              bio: String(formData.get("bio")).trim(),
-              language: String(formData.get("language")).trim(),
+              bio,
+              language,
               creatorLevel: String(formData.get("creatorLevel"))
             },
             strategy: {
