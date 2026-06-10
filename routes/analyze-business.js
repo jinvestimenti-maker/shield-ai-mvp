@@ -63,8 +63,11 @@ Return this exact JSON structure:
   "punti_di_forza": ["<strength 1>", "<strength 2>", "<strength 3>"],
   "errori_principali": ["<mistake 1 with fix>", "<mistake 2 with fix>", "<mistake 3 with fix>"],
   "opportunita": ["<opportunity 1>", "<opportunity 2>", "<opportunity 3>"],
+  "idee_contenuti": ["<idea 1>", "<idea 2>", "<idea 3>"],
   "next_actions": "<concrete first 3 actions to improve online presence>"
-}`;
+}
+
+For "idee_contenuti", suggest 3 specific Instagram post/reel ideas tailored to this business's category (e.g. for a restaurant: "reel del piatto più ordinato", "dietro le quinte in cucina"; for a hairdresser: "video prima/dopo di un taglio", "reel dei prodotti usati in salone"). Make them concrete and ready to film, not generic advice.`;
 }
 
 async function callOpenAI(prompt) {
