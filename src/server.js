@@ -10,6 +10,7 @@ import { validateNormalizedCreatorInput } from "./contracts.js";
 import { AlertingService } from "./alerting.js";
 import analyzeBusinessRouter from "../routes/analyze-business.js";
 import {
+  renderAnalyzeBusinessPage,
   renderAnalyzePage,
   renderDashboardPage,
   renderGeneratePage,
@@ -190,6 +191,10 @@ app.get("/", (_req, res) => {
 
 app.get("/analyze", (_req, res) => {
   res.type("html").send(renderAnalyzePage());
+});
+
+app.get("/analyze-business", (_req, res) => {
+  res.type("html").send(renderAnalyzeBusinessPage());
 });
 
 app.get("/generate", (_req, res) => {

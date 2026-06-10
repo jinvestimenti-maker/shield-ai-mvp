@@ -1558,6 +1558,641 @@ export function renderAnalyzePage() {
 </html>`;
 }
 
+export function renderAnalyzeBusinessPage() {
+  return `<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Analizza la tua attività — Shield AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-display@600,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/dist/tabler-icons.min.css">
+  <style>
+    :root {
+      --bg:  #f7f8fc;
+      --bg2: #ffffff;
+      --ink:  #161a2b;
+      --ink2: #4b5066;
+      --ink3: #9095ab;
+      --line: #e7e9f2;
+      --green:  #16a34a;
+      --orange: #f97316;
+      --blue:   #2563eb;
+      --a1: #ff6452;
+      --a2: #f59e0b;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Plus Jakarta Sans", sans-serif; color: var(--ink); min-height: 100vh;
+      background:
+        radial-gradient(ellipse at 18% 10%, rgba(37,99,235,.07) 0%, transparent 46%),
+        radial-gradient(ellipse at 84% 6%,  rgba(249,115,22,.07) 0%, transparent 42%),
+        radial-gradient(ellipse at 70% 85%, rgba(22,163,74,.06) 0%, transparent 48%),
+        var(--bg);
+    }
+    #nn { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+    .page { position: relative; z-index: 1; width: min(880px, 94vw); margin: 0 auto; padding: 2.5rem 0 5rem; }
+
+    /* header */
+    .hdr { display: flex; align-items: center; gap: .75rem; margin-bottom: 2.8rem; }
+    .logo-sq {
+      width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--a1) 0%, var(--a2) 100%);
+      display: grid; place-items: center;
+      font-family: "Clash Display", sans-serif; font-weight: 700; font-size: 1.1rem; color: #fff;
+    }
+    .logo-name { font-family: "Clash Display", sans-serif; font-weight: 700; font-size: 1.25rem; letter-spacing: -.02em; }
+
+    /* hero / form */
+    .hero { padding: 1rem 0 3rem; }
+    .kicker { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--ink3); margin-bottom: .6rem; }
+    .hero-title {
+      font-family: "Clash Display", sans-serif; font-weight: 700;
+      font-size: clamp(1.8rem, 4.5vw, 2.8rem); letter-spacing: -.03em; line-height: 1.1;
+      margin-bottom: .8rem; max-width: 18ch;
+    }
+    .hero-sub { font-size: 1rem; color: var(--ink2); font-weight: 500; max-width: 56ch; margin-bottom: 2.2rem; line-height: 1.6; }
+
+    .form-row { display: flex; gap: 1.5rem; margin-bottom: 1.6rem; flex-wrap: wrap; }
+    .field { flex: 1 1 220px; }
+    .field label {
+      display: flex; align-items: center; gap: .4rem; font-size: .8rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .06em; color: var(--ink3); margin-bottom: .5rem;
+    }
+    .field input {
+      width: 100%; border: none; border-bottom: 1px solid var(--line); background: transparent;
+      font: inherit; font-size: 1.05rem; font-weight: 600; color: var(--ink); padding: .6rem .1rem;
+      transition: border-color .15s;
+    }
+    .field input:focus { outline: none; border-bottom-color: var(--blue); }
+    .field input::placeholder { color: var(--ink3); font-weight: 500; }
+
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: .5rem; border: none; cursor: pointer;
+      background: linear-gradient(135deg, var(--a1) 0%, var(--a2) 100%);
+      color: #fff; font-family: "Plus Jakarta Sans", sans-serif; font-weight: 700;
+      font-size: .95rem; padding: .85rem 1.8rem; border-radius: 999px; transition: opacity .15s, transform .15s;
+    }
+    .btn-primary:hover { opacity: .9; transform: translateY(-1px); }
+    .btn-primary i { font-size: 1.1rem; }
+    .btn-ghost {
+      font-size: .88rem; color: var(--ink3); text-decoration: none; font-weight: 600;
+      background: none; border: none; cursor: pointer; padding: .5rem 0;
+    }
+    .btn-ghost:hover { color: var(--ink); }
+
+    /* loading */
+    #loading { display: none; text-align: center; padding: 5rem 0; }
+    .spinner {
+      width: 42px; height: 42px;
+      border: 3px solid var(--line); border-top-color: var(--blue);
+      border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 1.6rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-txt { font-size: 1rem; font-weight: 600; color: var(--ink2); transition: opacity .25s; min-height: 1.5em; }
+
+    /* error */
+    .err { color: #dc2626; font-weight: 600; font-size: .9rem; min-height: 1.4rem; margin-top: .6rem; }
+    #result-err { display: none; text-align: center; padding: 4rem 0; }
+    .err-icon { font-size: 2.6rem; color: var(--orange); margin-bottom: 1rem; }
+    .err-title { font-family: "Clash Display", sans-serif; font-weight: 700; font-size: 1.4rem; margin-bottom: .6rem; }
+    .err-body { font-size: .95rem; color: var(--ink2); max-width: 46ch; margin: 0 auto 1.8rem; line-height: 1.6; }
+
+    /* result */
+    #dash { display: none; }
+    .biz-head { margin-bottom: 2.4rem; }
+    .biz-name { font-family: "Clash Display", sans-serif; font-weight: 700; font-size: clamp(1.6rem, 4vw, 2.4rem); letter-spacing: -.03em; margin-bottom: .5rem; }
+    .biz-meta { display: flex; align-items: center; gap: 1.4rem; flex-wrap: wrap; color: var(--ink2); font-size: .92rem; font-weight: 600; }
+    .biz-meta span { display: inline-flex; align-items: center; gap: .35rem; }
+    .biz-meta i { font-size: 1.1rem; }
+    .star-icon { color: var(--orange); }
+
+    /* ring */
+    .ring-wrap { display: flex; flex-direction: column; align-items: center; margin: 2.2rem 0; }
+    .ring-outer {
+      --pct: 0;
+      width: 200px; height: 200px; border-radius: 50%;
+      background: conic-gradient(
+        from -90deg,
+        var(--a1) 0%,
+        var(--a2) calc(var(--pct) * 1%),
+        var(--line) calc(var(--pct) * 1%) 100%
+      );
+      display: grid; place-items: center;
+    }
+    .ring-inner {
+      width: 158px; height: 158px; border-radius: 50%; background: var(--bg2);
+      box-shadow: 0 8px 30px rgba(22,28,55,.06);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .1rem;
+    }
+    .ring-num {
+      font-family: "Clash Display", sans-serif; font-weight: 700;
+      font-size: 3rem; line-height: 1; letter-spacing: -.05em;
+    }
+    .ring-lbl { font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--ink3); }
+
+    /* verdict */
+    .verdict { text-align: center; max-width: 58ch; margin: 0 auto 2.5rem; }
+    .verdict-body { font-size: 1.05rem; line-height: 1.6; color: var(--ink2); font-weight: 500; }
+
+    /* divider */
+    hr { border: none; border-top: 1px solid var(--line); margin: 0 0 2rem; }
+
+    /* sections */
+    .section-block { margin-bottom: 2.4rem; }
+    .section-title {
+      display: flex; align-items: center; gap: .5rem; font-size: .75rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .1em; margin-bottom: 1.1rem; color: var(--ink3);
+    }
+    .section-title i { font-size: 1.05rem; }
+    .st-green  { color: var(--green); }
+    .st-orange { color: var(--orange); }
+    .st-blue   { color: var(--blue); }
+
+    /* 3 cols */
+    .three-col { display: grid; grid-template-columns: repeat(3, 1fr); margin-bottom: 2.4rem; }
+    .col { padding: 0 1.6rem; }
+    .col:first-child { padding-left: 0; }
+    .col:last-child  { padding-right: 0; }
+    .col + .col { border-left: 1px solid var(--line); }
+    .col ul { list-style: none; display: flex; flex-direction: column; gap: .7rem; }
+    .col li { font-size: .91rem; line-height: 1.5; color: var(--ink2); font-weight: 500; padding-left: 1.05rem; position: relative; }
+    .col li::before { content: "•"; position: absolute; left: 0; font-weight: 900; }
+    .col-green  li::before { color: var(--green); }
+    .col-orange li::before { color: var(--orange); }
+    .col-blue   li::before { color: var(--blue); }
+    @media (max-width: 600px) {
+      .three-col { grid-template-columns: 1fr; }
+      .col + .col { border-left: none; border-top: 1px solid var(--line); padding: 1.6rem 0 0; margin-top: 1.6rem; }
+      .form-row { gap: 1rem; }
+    }
+
+    /* idee contenuti */
+    .idea-list { list-style: none; display: flex; flex-direction: column; gap: .9rem; }
+    .idea-list li { display: flex; gap: .8rem; align-items: flex-start; font-size: .95rem; line-height: 1.55; color: var(--ink2); font-weight: 500; }
+    .idea-list i { color: var(--blue); font-size: 1.2rem; flex-shrink: 0; margin-top: .15rem; }
+
+    /* next actions */
+    .next-box {
+      font-size: 1rem; font-weight: 500; line-height: 1.6; color: var(--ink);
+      padding: 1.1rem 1.3rem; background: var(--bg2); border-left: 3px solid var(--a1); border-radius: 0 10px 10px 0;
+    }
+
+    .cta-row { display: flex; align-items: center; gap: 1.4rem; flex-wrap: wrap; margin-top: .5rem; }
+  </style>
+</head>
+<body>
+
+<canvas id="nn"></canvas>
+
+<div class="page">
+
+  <header class="hdr">
+    <div class="logo-sq">S</div>
+    <span class="logo-name">Shield AI</span>
+  </header>
+
+  <section class="hero" id="form-section">
+    <p class="kicker">Analisi gratuita</p>
+    <h1 class="hero-title">Scopri il potenziale online della tua attività</h1>
+    <p class="hero-sub">Inserisci nome e città: la nostra AI legge i dati pubblici della tua attività su Google e ti restituisce un piano d'azione su misura in pochi minuti.</p>
+    <div class="form-row">
+      <div class="field">
+        <label for="biz-name"><i class="ti ti-building-store"></i> Nome attività</label>
+        <input type="text" id="biz-name" placeholder="Es. Ristorante Da Mario" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="biz-city"><i class="ti ti-map-pin"></i> Città</label>
+        <input type="text" id="biz-city" placeholder="Es. Milano" autocomplete="off">
+      </div>
+    </div>
+    <button class="btn-primary" id="analyze-btn"><i class="ti ti-sparkles"></i> Analizza</button>
+    <p id="form-err" class="err"></p>
+  </section>
+
+  <section id="loading">
+    <div class="spinner"></div>
+    <p class="loading-txt" id="loading-msg">Sto leggendo le recensioni Google…</p>
+  </section>
+
+  <section id="result-err">
+    <p class="err-icon"><i class="ti ti-mood-sad"></i></p>
+    <p class="err-title">Non siamo riusciti a trovare questa attività</p>
+    <p class="err-body">Controlla che nome e città siano scritti come compaiono su Google Maps e riprova. Se il problema continua, riprova tra qualche minuto.</p>
+    <button class="btn-primary" id="retry-btn"><i class="ti ti-refresh"></i> Riprova</button>
+  </section>
+
+  <div id="dash">
+    <div class="biz-head">
+      <p class="kicker">Risultato analisi</p>
+      <p class="biz-name" id="biz-name-out">—</p>
+      <div class="biz-meta">
+        <span><i class="ti ti-map-pin"></i><span id="biz-address-out">—</span></span>
+        <span><i class="ti ti-star-filled star-icon"></i><span id="biz-rating-out">—</span></span>
+        <span><i class="ti ti-message-circle-2"></i><span id="biz-reviews-out">—</span></span>
+      </div>
+    </div>
+
+    <div class="ring-wrap">
+      <div class="ring-outer" id="ring-outer">
+        <div class="ring-inner">
+          <span class="ring-num" id="score-num">0</span>
+          <span class="ring-lbl">Growth Score</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="verdict">
+      <p class="kicker">Verdetto AI</p>
+      <p class="verdict-body" id="verdict-text">—</p>
+    </div>
+
+    <hr>
+
+    <div class="three-col">
+      <div class="col col-green">
+        <p class="section-title st-green"><i class="ti ti-circle-check"></i> Punti di forza</p>
+        <ul id="forze-list"></ul>
+      </div>
+      <div class="col col-orange">
+        <p class="section-title st-orange"><i class="ti ti-alert-triangle"></i> Errori principali</p>
+        <ul id="errori-list"></ul>
+      </div>
+      <div class="col col-blue">
+        <p class="section-title st-blue"><i class="ti ti-bulb"></i> Opportunità</p>
+        <ul id="opportunita-list"></ul>
+      </div>
+    </div>
+
+    <hr>
+
+    <div class="section-block">
+      <p class="section-title st-blue"><i class="ti ti-brand-instagram"></i> Idee contenuti</p>
+      <ul class="idea-list" id="idee-list"></ul>
+    </div>
+
+    <hr>
+
+    <div class="section-block">
+      <p class="section-title"><i class="ti ti-rocket"></i> Prossime azioni</p>
+      <p class="next-box" id="next-actions-text">—</p>
+    </div>
+
+    <div class="cta-row">
+      <button class="btn-primary" id="new-analysis-btn"><i class="ti ti-search"></i> Nuova analisi</button>
+      <a class="btn-ghost" href="/">← Home</a>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  /* session id */
+  (function () {
+    try {
+      var k = "shia.session.id", v = localStorage.getItem(k);
+      if (!v) { v = "sess_" + Date.now() + "_" + Math.floor(Math.random() * 1e9); localStorage.setItem(k, v); }
+      window.__shiaSessionId = v;
+    } catch (e) { window.__shiaSessionId = null; }
+  })();
+
+  /* 3D animated brain — neurons positioned on a brain silhouette, slowly rotating (light theme) */
+  (function () {
+    var canvas = document.getElementById("nn");
+    var ctx = canvas.getContext("2d");
+
+    var N = 130, LINK_DIST = 48;
+    var FOCAL = 420, CAM_DIST = 480;
+    var nodes = [], adjacency = [], pulses = [], flashes = [], stars = [];
+    var proj = [], order = [];
+    var rotation = 0, scaleMin = 1, scaleMax = 1;
+
+    function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+
+    function brainPoint() {
+      var side = Math.random() < .5 ? -1 : 1;
+      var u = Math.random(), v = Math.random();
+      var theta = 2 * Math.PI * u;
+      var phi = Math.acos(2 * v - 1);
+      var lx = Math.sin(phi) * Math.cos(theta);
+      var ly = Math.cos(phi);
+      var lz = Math.sin(phi) * Math.sin(theta);
+      if (side * lx < 0) lx *= .3;
+      var rx = 84, ry = 116, rz = 124;
+      return { x: side * 54 + lx * rx, y: ly * ry - 8, z: lz * rz };
+    }
+
+    function init() {
+      nodes = [];
+      for (var i = 0; i < N; i++) nodes.push(brainPoint());
+
+      adjacency = [];
+      for (var i = 0; i < N; i++) adjacency.push([]);
+      for (var i = 0; i < N; i++) {
+        for (var j = i + 1; j < N; j++) {
+          var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y, dz = nodes[i].z - nodes[j].z;
+          if (Math.sqrt(dx * dx + dy * dy + dz * dz) < LINK_DIST) {
+            adjacency[i].push(j);
+            adjacency[j].push(i);
+          }
+        }
+      }
+
+      var maxR = 0;
+      for (var i = 0; i < N; i++) {
+        var r = Math.sqrt(nodes[i].x * nodes[i].x + nodes[i].z * nodes[i].z);
+        if (r > maxR) maxR = r;
+      }
+      scaleMin = FOCAL / (CAM_DIST + maxR);
+      scaleMax = FOCAL / (CAM_DIST - maxR);
+
+      pulses = [];
+      flashes = new Array(N).fill(0);
+      proj = new Array(N);
+      order = [];
+      for (var i = 0; i < N; i++) order.push(i);
+
+      stars = [];
+      var starCount = Math.floor((innerWidth * innerHeight) / 5200);
+      for (var s = 0; s < starCount; s++) {
+        stars.push({
+          x: Math.random() * innerWidth,
+          y: Math.random() * innerHeight,
+          r: Math.random() * 1.3 + .25,
+          base: .08 + Math.random() * .14,
+          amp: Math.random() * .14,
+          speed: .0007 + Math.random() * .0022,
+          phase: Math.random() * Math.PI * 2
+        });
+      }
+    }
+
+    function drawStars(now) {
+      for (var i = 0; i < stars.length; i++) {
+        var st = stars[i];
+        var a = st.base + st.amp * Math.sin(now * st.speed + st.phase);
+        if (a < 0) a = 0; else if (a > 1) a = 1;
+        ctx.beginPath();
+        ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(150,158,190," + a.toFixed(3) + ")";
+        ctx.fill();
+      }
+    }
+
+    function fire(i) {
+      flashes[i] = 1;
+      if (Math.random() < .85 && adjacency[i].length) {
+        var j = adjacency[i][Math.floor(Math.random() * adjacency[i].length)];
+        pulses.push({ a: i, b: j, t: 0, speed: .022 + Math.random() * .026 });
+      }
+    }
+
+    function tick(now) {
+      now = now || performance.now();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawStars(now);
+
+      rotation += .0028;
+      var cos = Math.cos(rotation), sin = Math.sin(rotation);
+      var cx = canvas.width / 2, cy = canvas.height / 2;
+
+      for (var i = 0; i < N; i++) {
+        var n = nodes[i];
+        var xr = n.x * cos + n.z * sin;
+        var zr = -n.x * sin + n.z * cos;
+        var sc = FOCAL / (CAM_DIST + zr);
+        var t = (sc - scaleMin) / (scaleMax - scaleMin);
+        if (t < 0) t = 0; else if (t > 1) t = 1;
+        proj[i] = { x: cx + xr * sc, y: cy + n.y * sc, scale: sc, t: t };
+        flashes[i] = Math.max(0, flashes[i] - .035);
+      }
+      order.sort(function (a, b) { return proj[a].scale - proj[b].scale; });
+
+      if (Math.random() < .07) fire(Math.floor(Math.random() * N));
+
+      /* synapse mesh — soft blue, brighter & thicker the closer to the viewer, glows when firing */
+      for (var i = 0; i < N; i++) {
+        var nb = adjacency[i];
+        for (var k = 0; k < nb.length; k++) {
+          var j = nb[k];
+          if (j < i) continue;
+          var pa = proj[i], pb = proj[j];
+          var depth = (pa.t + pb.t) / 2;
+          var boost = Math.max(flashes[i], flashes[j]) * .5;
+          ctx.beginPath();
+          ctx.strokeStyle = "rgba(37,99,235," + (.03 + depth * .14 + boost) + ")";
+          ctx.lineWidth = .4 + depth * 1.1 + boost * 1.3;
+          ctx.moveTo(pa.x, pa.y);
+          ctx.lineTo(pb.x, pb.y);
+          ctx.stroke();
+        }
+      }
+
+      /* electrical impulses travelling along synapses with an orange glowing trail */
+      for (var p = pulses.length - 1; p >= 0; p--) {
+        var pulse = pulses[p];
+        pulse.t += pulse.speed;
+        if (pulse.t >= 1) { fire(pulse.b); pulses.splice(p, 1); continue; }
+        var pa = proj[pulse.a], pb = proj[pulse.b];
+        var x = pa.x + (pb.x - pa.x) * pulse.t;
+        var y = pa.y + (pb.y - pa.y) * pulse.t;
+        var depth = (pa.t + pb.t) / 2;
+        var rad = 5 + depth * 5;
+        var glow = ctx.createRadialGradient(x, y, 0, x, y, rad);
+        glow.addColorStop(0, "rgba(249,180,110," + (.65 + depth * .35) + ")");
+        glow.addColorStop(1, "rgba(249,115,22,0)");
+        ctx.fillStyle = glow;
+        ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(x, y, 1.3 + depth * 1.1, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(234,88,12," + (.75 + depth * .25) + ")";
+        ctx.fill();
+      }
+
+      /* neurons, drawn back to front — close ones bigger & glowing, far ones small & blurred */
+      for (var oi = 0; oi < order.length; oi++) {
+        var i = order[oi];
+        var pr = proj[i], flash = flashes[i];
+        var rr = (1 + pr.t * 2.6) + flash * 3.2;
+        ctx.save();
+        if (flash > .05) {
+          ctx.shadowColor = "rgba(249,115,22," + Math.min(1, flash) + ")";
+          ctx.shadowBlur = 6 + flash * 22;
+        } else if (pr.t < .4) {
+          ctx.filter = "blur(" + ((.4 - pr.t) * 3.4) + "px)";
+        } else {
+          ctx.shadowColor = "rgba(37,99,235,.35)";
+          ctx.shadowBlur = (pr.t - .4) * 14;
+        }
+        ctx.beginPath();
+        ctx.arc(pr.x, pr.y, rr, 0, Math.PI * 2);
+        ctx.fillStyle = flash > .05
+          ? "rgba(249,115,22," + Math.min(1, .35 + flash * .65) + ")"
+          : "rgba(37,99,235," + (.08 + pr.t * .32) + ")";
+        ctx.fill();
+        ctx.restore();
+      }
+
+      requestAnimationFrame(tick);
+    }
+    resize(); init(); tick();
+    window.addEventListener("resize", function () { resize(); init(); });
+  })();
+
+  /* page logic */
+  (function () {
+    var formSection = document.getElementById("form-section");
+    var loading     = document.getElementById("loading");
+    var resultErr   = document.getElementById("result-err");
+    var dash        = document.getElementById("dash");
+    var formErr     = document.getElementById("form-err");
+    var nameInput   = document.getElementById("biz-name");
+    var cityInput   = document.getElementById("biz-city");
+    var analyzeBtn  = document.getElementById("analyze-btn");
+    var retryBtn    = document.getElementById("retry-btn");
+    var newBtn      = document.getElementById("new-analysis-btn");
+    var loadingMsg  = document.getElementById("loading-msg");
+
+    var loadingMessages = [
+      "Sto leggendo le recensioni Google…",
+      "Sto analizzando la concorrenza…",
+      "Sto controllando i dati della tua attività…",
+      "Sto preparando i suggerimenti…",
+      "Sto generando idee di contenuti per i social…"
+    ];
+    var msgTimer = null;
+
+    function startMessages() {
+      var i = 0;
+      loadingMsg.textContent = loadingMessages[0];
+      loadingMsg.style.opacity = 1;
+      msgTimer = setInterval(function () {
+        i = (i + 1) % loadingMessages.length;
+        loadingMsg.style.opacity = 0;
+        setTimeout(function () {
+          loadingMsg.textContent = loadingMessages[i];
+          loadingMsg.style.opacity = 1;
+        }, 250);
+      }, 2600);
+    }
+    function stopMessages() {
+      if (msgTimer) { clearInterval(msgTimer); msgTimer = null; }
+    }
+
+    function esc(s) {
+      return String(s).replace(/[<>&"']/g, function (c) {
+        return { "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&#39;" }[c];
+      });
+    }
+    function setList(id, arr) {
+      document.getElementById(id).innerHTML =
+        (Array.isArray(arr) ? arr : []).map(function (v) { return "<li>" + esc(v) + "</li>"; }).join("");
+    }
+    function setIdeaList(id, arr) {
+      document.getElementById(id).innerHTML =
+        (Array.isArray(arr) ? arr : []).map(function (v) {
+          return "<li><i class=\\"ti ti-bulb-filled\\"></i><span>" + esc(v) + "</span></li>";
+        }).join("");
+    }
+    function animateRing(score) {
+      var ring = document.getElementById("ring-outer");
+      var num  = document.getElementById("score-num");
+      score = Math.max(0, Math.min(100, score || 0));
+      var dur = 1200, start = performance.now();
+      function frame(now) {
+        var t = Math.min((now - start) / dur, 1);
+        var eased = 1 - Math.pow(1 - t, 3);
+        var cur = Math.round(score * eased);
+        ring.style.setProperty("--pct", cur);
+        num.textContent = cur;
+        if (t < 1) requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    }
+
+    function showState(state) {
+      formSection.style.display = state === "form" ? "block" : "none";
+      loading.style.display     = state === "loading" ? "block" : "none";
+      resultErr.style.display   = state === "error" ? "block" : "none";
+      dash.style.display        = state === "result" ? "block" : "none";
+    }
+
+    function runAnalysis() {
+      var name = nameInput.value.trim();
+      var city = cityInput.value.trim();
+      formErr.textContent = "";
+      if (!name || !city) {
+        formErr.textContent = "Inserisci nome attività e città.";
+        return;
+      }
+
+      showState("loading");
+      startMessages();
+
+      fetch("/analyze-business", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ businessName: name, location: city })
+      })
+      .then(function (res) {
+        return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+      })
+      .then(function (r) {
+        stopMessages();
+        if (!r.ok) {
+          showState("error");
+          return;
+        }
+        var d   = r.data || {};
+        var biz = d.business || {};
+        var an  = d.analysis || {};
+
+        document.getElementById("biz-name-out").textContent = biz.name || name;
+        document.getElementById("biz-address-out").textContent = biz.address || city;
+        document.getElementById("biz-rating-out").textContent =
+          typeof biz.rating === "number" ? biz.rating.toFixed(1) : "—";
+        document.getElementById("biz-reviews-out").textContent =
+          typeof biz.reviewsCount === "number" ? biz.reviewsCount + " recensioni" : "Nessuna recensione";
+
+        showState("result");
+        animateRing(an.growth_score);
+        document.getElementById("verdict-text").textContent = an.score_explanation || "—";
+        setList("forze-list",       an.punti_di_forza);
+        setList("errori-list",      an.errori_principali);
+        setList("opportunita-list", an.opportunita);
+        setIdeaList("idee-list",    an.idee_contenuti);
+        document.getElementById("next-actions-text").textContent = an.next_actions || "—";
+      })
+      .catch(function () {
+        stopMessages();
+        showState("error");
+      });
+    }
+
+    analyzeBtn.addEventListener("click", runAnalysis);
+    retryBtn.addEventListener("click", function () { showState("form"); });
+    newBtn.addEventListener("click", function () {
+      nameInput.value = "";
+      cityInput.value = "";
+      showState("form");
+      nameInput.focus();
+    });
+    [nameInput, cityInput].forEach(function (input) {
+      input.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") runAnalysis();
+      });
+    });
+
+    showState("form");
+  })();
+</script>
+
+</body>
+</html>`;
+}
+
 export function renderDashboardPage({ userId, previews, payments, sprints }) {
   return `<!doctype html>
 <html lang="en">
