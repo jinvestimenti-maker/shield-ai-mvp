@@ -8,6 +8,7 @@ import { IngestionService } from "./ingest.js";
 import { GenerationService } from "./generation.js";
 import { validateNormalizedCreatorInput } from "./contracts.js";
 import { AlertingService } from "./alerting.js";
+import analyzeBusinessRouter from "../routes/analyze-business.js";
 import {
   renderAnalyzePage,
   renderDashboardPage,
@@ -166,6 +167,8 @@ app.post(
 );
 
 app.use(express.json());
+
+app.use("/", analyzeBusinessRouter);
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
