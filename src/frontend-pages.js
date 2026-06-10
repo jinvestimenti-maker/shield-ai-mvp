@@ -314,13 +314,25 @@ export function renderLandingPage() {
     var canvas = document.getElementById("nn");
     var ctx = canvas.getContext("2d");
 
-    var N = 130, LINK_DIST = 48;
-    var FOCAL = 420, CAM_DIST = 480;
+    var N, LINK_DIST, FOCAL, CAM_DIST, RES = 1;
     var nodes = [], adjacency = [], pulses = [], flashes = [], stars = [];
     var proj = [], order = [];
     var rotation = 0, scaleMin = 1, scaleMax = 1;
 
-    function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+    var FRAME_INTERVAL = 1000 / 30;
+    var lastFrame = 0;
+    var typingPause = false;
+    var resumeTimer = null;
+
+    function resize() {
+      RES = Math.min(innerWidth, innerHeight) < 640 ? .65 : 1;
+      canvas.width = Math.round(innerWidth * RES);
+      canvas.height = Math.round(innerHeight * RES);
+      N = RES < 1 ? 55 : 75;
+      LINK_DIST = 48 * RES;
+      FOCAL = 420 * RES;
+      CAM_DIST = 480 * RES;
+    }
 
     function brainPoint() {
       var side = Math.random() < .5 ? -1 : 1;
@@ -331,8 +343,8 @@ export function renderLandingPage() {
       var ly = Math.cos(phi);
       var lz = Math.sin(phi) * Math.sin(theta);
       if (side * lx < 0) lx *= .3;            /* flatten medial face -> longitudinal fissure */
-      var rx = 84, ry = 116, rz = 124;
-      return { x: side * 54 + lx * rx, y: ly * ry - 8, z: lz * rz };
+      var rx = 84 * RES, ry = 116 * RES, rz = 124 * RES;
+      return { x: side * 54 * RES + lx * rx, y: ly * ry - 8 * RES, z: lz * rz };
     }
 
     function init() {
@@ -366,11 +378,11 @@ export function renderLandingPage() {
       for (var i = 0; i < N; i++) order.push(i);
 
       stars = [];
-      var starCount = Math.floor((innerWidth * innerHeight) / 4200);
+      var starCount = Math.floor((canvas.width * canvas.height) / 4200);
       for (var s = 0; s < starCount; s++) {
         stars.push({
-          x: Math.random() * innerWidth,
-          y: Math.random() * innerHeight,
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
           r: Math.random() * 1.3 + .25,
           base: .2 + Math.random() * .45,
           amp: Math.random() * .45,
@@ -402,6 +414,10 @@ export function renderLandingPage() {
 
     function tick(now) {
       now = now || performance.now();
+      requestAnimationFrame(tick);
+      if (typingPause || now - lastFrame < FRAME_INTERVAL) return;
+      lastFrame = now;
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawStars(now);
 
@@ -484,11 +500,19 @@ export function renderLandingPage() {
         ctx.fill();
         ctx.restore();
       }
-
-      requestAnimationFrame(tick);
     }
     resize(); init(); tick();
-    window.addEventListener("resize", function () { resize(); });
+    window.addEventListener("resize", function () { resize(); init(); });
+
+    /* pause heavy rendering while the user is typing, resume shortly after */
+    document.addEventListener("input", function (e) {
+      var tag = e.target && e.target.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") {
+        typingPause = true;
+        if (resumeTimer) clearTimeout(resumeTimer);
+        resumeTimer = setTimeout(function () { typingPause = false; }, 500);
+      }
+    });
   })();
 </script>
 
@@ -662,13 +686,25 @@ export function renderGeneratePage() {
     var canvas = document.getElementById("nn");
     var ctx = canvas.getContext("2d");
 
-    var N = 130, LINK_DIST = 48;
-    var FOCAL = 420, CAM_DIST = 480;
+    var N, LINK_DIST, FOCAL, CAM_DIST, RES = 1;
     var nodes = [], adjacency = [], pulses = [], flashes = [], stars = [];
     var proj = [], order = [];
     var rotation = 0, scaleMin = 1, scaleMax = 1;
 
-    function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+    var FRAME_INTERVAL = 1000 / 30;
+    var lastFrame = 0;
+    var typingPause = false;
+    var resumeTimer = null;
+
+    function resize() {
+      RES = Math.min(innerWidth, innerHeight) < 640 ? .65 : 1;
+      canvas.width = Math.round(innerWidth * RES);
+      canvas.height = Math.round(innerHeight * RES);
+      N = RES < 1 ? 55 : 75;
+      LINK_DIST = 48 * RES;
+      FOCAL = 420 * RES;
+      CAM_DIST = 480 * RES;
+    }
 
     function brainPoint() {
       var side = Math.random() < .5 ? -1 : 1;
@@ -679,8 +715,8 @@ export function renderGeneratePage() {
       var ly = Math.cos(phi);
       var lz = Math.sin(phi) * Math.sin(theta);
       if (side * lx < 0) lx *= .3;            /* flatten medial face -> longitudinal fissure */
-      var rx = 84, ry = 116, rz = 124;
-      return { x: side * 54 + lx * rx, y: ly * ry - 8, z: lz * rz };
+      var rx = 84 * RES, ry = 116 * RES, rz = 124 * RES;
+      return { x: side * 54 * RES + lx * rx, y: ly * ry - 8 * RES, z: lz * rz };
     }
 
     function init() {
@@ -714,11 +750,11 @@ export function renderGeneratePage() {
       for (var i = 0; i < N; i++) order.push(i);
 
       stars = [];
-      var starCount = Math.floor((innerWidth * innerHeight) / 4200);
+      var starCount = Math.floor((canvas.width * canvas.height) / 4200);
       for (var s = 0; s < starCount; s++) {
         stars.push({
-          x: Math.random() * innerWidth,
-          y: Math.random() * innerHeight,
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
           r: Math.random() * 1.3 + .25,
           base: .2 + Math.random() * .45,
           amp: Math.random() * .45,
@@ -750,6 +786,10 @@ export function renderGeneratePage() {
 
     function tick(now) {
       now = now || performance.now();
+      requestAnimationFrame(tick);
+      if (typingPause || now - lastFrame < FRAME_INTERVAL) return;
+      lastFrame = now;
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawStars(now);
 
@@ -832,11 +872,19 @@ export function renderGeneratePage() {
         ctx.fill();
         ctx.restore();
       }
-
-      requestAnimationFrame(tick);
     }
     resize(); init(); tick();
-    window.addEventListener("resize", function () { resize(); });
+    window.addEventListener("resize", function () { resize(); init(); });
+
+    /* pause heavy rendering while the user is typing, resume shortly after */
+    document.addEventListener("input", function (e) {
+      var tag = e.target && e.target.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") {
+        typingPause = true;
+        if (resumeTimer) clearTimeout(resumeTimer);
+        resumeTimer = setTimeout(function () { typingPause = false; }, 500);
+      }
+    });
   })();
 
   /* form submit */
@@ -1305,13 +1353,25 @@ export function renderAnalyzePage() {
     var canvas = document.getElementById("nn");
     var ctx = canvas.getContext("2d");
 
-    var N = 130, LINK_DIST = 48;
-    var FOCAL = 420, CAM_DIST = 480;
+    var N, LINK_DIST, FOCAL, CAM_DIST, RES = 1;
     var nodes = [], adjacency = [], pulses = [], flashes = [], stars = [];
     var proj = [], order = [];
     var rotation = 0, scaleMin = 1, scaleMax = 1;
 
-    function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+    var FRAME_INTERVAL = 1000 / 30;
+    var lastFrame = 0;
+    var typingPause = false;
+    var resumeTimer = null;
+
+    function resize() {
+      RES = Math.min(innerWidth, innerHeight) < 640 ? .65 : 1;
+      canvas.width = Math.round(innerWidth * RES);
+      canvas.height = Math.round(innerHeight * RES);
+      N = RES < 1 ? 55 : 75;
+      LINK_DIST = 48 * RES;
+      FOCAL = 420 * RES;
+      CAM_DIST = 480 * RES;
+    }
 
     function brainPoint() {
       var side = Math.random() < .5 ? -1 : 1;
@@ -1322,8 +1382,8 @@ export function renderAnalyzePage() {
       var ly = Math.cos(phi);
       var lz = Math.sin(phi) * Math.sin(theta);
       if (side * lx < 0) lx *= .3;            /* flatten medial face -> longitudinal fissure */
-      var rx = 84, ry = 116, rz = 124;
-      return { x: side * 54 + lx * rx, y: ly * ry - 8, z: lz * rz };
+      var rx = 84 * RES, ry = 116 * RES, rz = 124 * RES;
+      return { x: side * 54 * RES + lx * rx, y: ly * ry - 8 * RES, z: lz * rz };
     }
 
     function init() {
@@ -1357,11 +1417,11 @@ export function renderAnalyzePage() {
       for (var i = 0; i < N; i++) order.push(i);
 
       stars = [];
-      var starCount = Math.floor((innerWidth * innerHeight) / 4200);
+      var starCount = Math.floor((canvas.width * canvas.height) / 4200);
       for (var s = 0; s < starCount; s++) {
         stars.push({
-          x: Math.random() * innerWidth,
-          y: Math.random() * innerHeight,
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
           r: Math.random() * 1.3 + .25,
           base: .2 + Math.random() * .45,
           amp: Math.random() * .45,
@@ -1393,6 +1453,10 @@ export function renderAnalyzePage() {
 
     function tick(now) {
       now = now || performance.now();
+      requestAnimationFrame(tick);
+      if (typingPause || now - lastFrame < FRAME_INTERVAL) return;
+      lastFrame = now;
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawStars(now);
 
@@ -1475,11 +1539,19 @@ export function renderAnalyzePage() {
         ctx.fill();
         ctx.restore();
       }
-
-      requestAnimationFrame(tick);
     }
     resize(); init(); tick();
-    window.addEventListener("resize", function () { resize(); });
+    window.addEventListener("resize", function () { resize(); init(); });
+
+    /* pause heavy rendering while the user is typing, resume shortly after */
+    document.addEventListener("input", function (e) {
+      var tag = e.target && e.target.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") {
+        typingPause = true;
+        if (resumeTimer) clearTimeout(resumeTimer);
+        resumeTimer = setTimeout(function () { typingPause = false; }, 500);
+      }
+    });
   })();
 
   /* analyze */
@@ -1864,13 +1936,25 @@ export function renderAnalyzeBusinessPage() {
     var canvas = document.getElementById("nn");
     var ctx = canvas.getContext("2d");
 
-    var N = 130, LINK_DIST = 48;
-    var FOCAL = 420, CAM_DIST = 480;
+    var N, LINK_DIST, FOCAL, CAM_DIST, RES = 1;
     var nodes = [], adjacency = [], pulses = [], flashes = [], stars = [];
     var proj = [], order = [];
     var rotation = 0, scaleMin = 1, scaleMax = 1;
 
-    function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+    var FRAME_INTERVAL = 1000 / 30;
+    var lastFrame = 0;
+    var typingPause = false;
+    var resumeTimer = null;
+
+    function resize() {
+      RES = Math.min(innerWidth, innerHeight) < 640 ? .65 : 1;
+      canvas.width = Math.round(innerWidth * RES);
+      canvas.height = Math.round(innerHeight * RES);
+      N = RES < 1 ? 55 : 75;
+      LINK_DIST = 48 * RES;
+      FOCAL = 420 * RES;
+      CAM_DIST = 480 * RES;
+    }
 
     function brainPoint() {
       var side = Math.random() < .5 ? -1 : 1;
@@ -1881,8 +1965,8 @@ export function renderAnalyzeBusinessPage() {
       var ly = Math.cos(phi);
       var lz = Math.sin(phi) * Math.sin(theta);
       if (side * lx < 0) lx *= .3;
-      var rx = 84, ry = 116, rz = 124;
-      return { x: side * 54 + lx * rx, y: ly * ry - 8, z: lz * rz };
+      var rx = 84 * RES, ry = 116 * RES, rz = 124 * RES;
+      return { x: side * 54 * RES + lx * rx, y: ly * ry - 8 * RES, z: lz * rz };
     }
 
     function init() {
@@ -1916,11 +2000,11 @@ export function renderAnalyzeBusinessPage() {
       for (var i = 0; i < N; i++) order.push(i);
 
       stars = [];
-      var starCount = Math.floor((innerWidth * innerHeight) / 5200);
+      var starCount = Math.floor((canvas.width * canvas.height) / 5200);
       for (var s = 0; s < starCount; s++) {
         stars.push({
-          x: Math.random() * innerWidth,
-          y: Math.random() * innerHeight,
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
           r: Math.random() * 1.3 + .25,
           base: .08 + Math.random() * .14,
           amp: Math.random() * .14,
@@ -1952,6 +2036,10 @@ export function renderAnalyzeBusinessPage() {
 
     function tick(now) {
       now = now || performance.now();
+      requestAnimationFrame(tick);
+      if (typingPause || now - lastFrame < FRAME_INTERVAL) return;
+      lastFrame = now;
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawStars(now);
 
@@ -2034,11 +2122,19 @@ export function renderAnalyzeBusinessPage() {
         ctx.fill();
         ctx.restore();
       }
-
-      requestAnimationFrame(tick);
     }
     resize(); init(); tick();
     window.addEventListener("resize", function () { resize(); init(); });
+
+    /* pause heavy rendering while the user is typing, resume shortly after */
+    document.addEventListener("input", function (e) {
+      var tag = e.target && e.target.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") {
+        typingPause = true;
+        if (resumeTimer) clearTimeout(resumeTimer);
+        resumeTimer = setTimeout(function () { typingPause = false; }, 500);
+      }
+    });
   })();
 
   /* page logic */
@@ -2366,13 +2462,25 @@ export function renderDashboardPage({ userId, previews, payments, sprints }) {
     var canvas = document.getElementById("nn");
     var ctx = canvas.getContext("2d");
 
-    var N = 130, LINK_DIST = 48;
-    var FOCAL = 420, CAM_DIST = 480;
+    var N, LINK_DIST, FOCAL, CAM_DIST, RES = 1;
     var nodes = [], adjacency = [], pulses = [], flashes = [], stars = [];
     var proj = [], order = [];
     var rotation = 0, scaleMin = 1, scaleMax = 1;
 
-    function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+    var FRAME_INTERVAL = 1000 / 30;
+    var lastFrame = 0;
+    var typingPause = false;
+    var resumeTimer = null;
+
+    function resize() {
+      RES = Math.min(innerWidth, innerHeight) < 640 ? .65 : 1;
+      canvas.width = Math.round(innerWidth * RES);
+      canvas.height = Math.round(innerHeight * RES);
+      N = RES < 1 ? 55 : 75;
+      LINK_DIST = 48 * RES;
+      FOCAL = 420 * RES;
+      CAM_DIST = 480 * RES;
+    }
 
     function brainPoint() {
       var side = Math.random() < .5 ? -1 : 1;
@@ -2383,8 +2491,8 @@ export function renderDashboardPage({ userId, previews, payments, sprints }) {
       var ly = Math.cos(phi);
       var lz = Math.sin(phi) * Math.sin(theta);
       if (side * lx < 0) lx *= .3;            /* flatten medial face -> longitudinal fissure */
-      var rx = 84, ry = 116, rz = 124;
-      return { x: side * 54 + lx * rx, y: ly * ry - 8, z: lz * rz };
+      var rx = 84 * RES, ry = 116 * RES, rz = 124 * RES;
+      return { x: side * 54 * RES + lx * rx, y: ly * ry - 8 * RES, z: lz * rz };
     }
 
     function init() {
@@ -2418,11 +2526,11 @@ export function renderDashboardPage({ userId, previews, payments, sprints }) {
       for (var i = 0; i < N; i++) order.push(i);
 
       stars = [];
-      var starCount = Math.floor((innerWidth * innerHeight) / 4200);
+      var starCount = Math.floor((canvas.width * canvas.height) / 4200);
       for (var s = 0; s < starCount; s++) {
         stars.push({
-          x: Math.random() * innerWidth,
-          y: Math.random() * innerHeight,
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
           r: Math.random() * 1.3 + .25,
           base: .2 + Math.random() * .45,
           amp: Math.random() * .45,
@@ -2454,6 +2562,10 @@ export function renderDashboardPage({ userId, previews, payments, sprints }) {
 
     function tick(now) {
       now = now || performance.now();
+      requestAnimationFrame(tick);
+      if (typingPause || now - lastFrame < FRAME_INTERVAL) return;
+      lastFrame = now;
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawStars(now);
 
@@ -2536,11 +2648,19 @@ export function renderDashboardPage({ userId, previews, payments, sprints }) {
         ctx.fill();
         ctx.restore();
       }
-
-      requestAnimationFrame(tick);
     }
     resize(); init(); tick();
-    window.addEventListener("resize", function () { resize(); });
+    window.addEventListener("resize", function () { resize(); init(); });
+
+    /* pause heavy rendering while the user is typing, resume shortly after */
+    document.addEventListener("input", function (e) {
+      var tag = e.target && e.target.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") {
+        typingPause = true;
+        if (resumeTimer) clearTimeout(resumeTimer);
+        resumeTimer = setTimeout(function () { typingPause = false; }, 500);
+      }
+    });
   })();
 </script>
 
