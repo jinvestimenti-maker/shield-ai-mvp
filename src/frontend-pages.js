@@ -209,7 +209,6 @@ export function renderLandingPage() {
         radial-gradient(ellipse at 12% 85%, rgba(124,58,237,.13) 0%, transparent 44%),
         var(--bg);
     }
-    #nn { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
     .page { position: relative; z-index: 1; width: min(880px, 94vw); margin: 0 auto; padding: 2.5rem 0 5rem; }
 
     /* header */
@@ -255,8 +254,6 @@ export function renderLandingPage() {
   </style>
 </head>
 <body>
-
-<canvas id="nn"></canvas>
 
 <div class="page">
 
@@ -308,113 +305,6 @@ export function renderLandingPage() {
       window.__shiaSessionId = v;
     } catch (e) { window.__shiaSessionId = null; }
   })();
-
-    /* static brain — neurons positioned on a brain silhouette, drawn once (no animation) */
-  (function () {
-    var canvas = document.getElementById("nn");
-    var ctx = canvas.getContext("2d");
-
-    function brainPoint(res) {
-      var side = Math.random() < .5 ? -1 : 1;
-      var u = Math.random(), v = Math.random();
-      var theta = 2 * Math.PI * u;
-      var phi = Math.acos(2 * v - 1);
-      var lx = Math.sin(phi) * Math.cos(theta);
-      var ly = Math.cos(phi);
-      var lz = Math.sin(phi) * Math.sin(theta);
-      if (side * lx < 0) lx *= .3;            /* flatten medial face -> longitudinal fissure */
-      var rx = 84 * res, ry = 116 * res, rz = 124 * res;
-      return { x: side * 54 * res + lx * rx, y: ly * ry - 8 * res, z: lz * rz };
-    }
-
-    function draw() {
-      var res = Math.min(innerWidth, innerHeight) < 640 ? .65 : 1;
-      canvas.width = Math.round(innerWidth * res);
-      canvas.height = Math.round(innerHeight * res);
-      var n = res < 1 ? 55 : 75;
-      var linkDist = 48 * res;
-      var focal = 420 * res;
-      var camDist = 480 * res;
-
-      var nodes = [];
-      for (var i = 0; i < n; i++) nodes.push(brainPoint(res));
-
-      var maxR = 0;
-      for (var i = 0; i < n; i++) {
-        var r = Math.sqrt(nodes[i].x * nodes[i].x + nodes[i].z * nodes[i].z);
-        if (r > maxR) maxR = r;
-      }
-      var scaleMin = focal / (camDist + maxR);
-      var scaleMax = focal / (camDist - maxR);
-
-      var rotation = .6;
-      var cos = Math.cos(rotation), sin = Math.sin(rotation);
-      var cx = canvas.width / 2, cy = canvas.height / 2;
-
-      var proj = new Array(n);
-      for (var i = 0; i < n; i++) {
-        var nd = nodes[i];
-        var xr = nd.x * cos + nd.z * sin;
-        var zr = -nd.x * sin + nd.z * cos;
-        var sc = focal / (camDist + zr);
-        var t = (sc - scaleMin) / (scaleMax - scaleMin);
-        if (t < 0) t = 0; else if (t > 1) t = 1;
-        proj[i] = { x: cx + xr * sc, y: cy + nd.y * sc, scale: sc, t: t };
-      }
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      /* starfield, drawn once at fixed brightness */
-      var starCount = Math.floor((canvas.width * canvas.height) / 4200);
-      for (var s = 0; s < starCount; s++) {
-        var sa = Math.min(1, .2 + Math.random() * .675);
-        ctx.beginPath();
-        ctx.arc(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 1.3 + .25, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(228,233,255," + sa.toFixed(3) + ")";
-        ctx.fill();
-      }
-
-      /* synapse mesh — brighter & thicker the closer to the viewer */
-      for (var i = 0; i < n; i++) {
-        for (var j = i + 1; j < n; j++) {
-          var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y, dz = nodes[i].z - nodes[j].z;
-          if (Math.sqrt(dx * dx + dy * dy + dz * dz) >= linkDist) continue;
-          var pa = proj[i], pb = proj[j];
-          var depth = (pa.t + pb.t) / 2;
-          ctx.beginPath();
-          ctx.strokeStyle = "rgba(255,110,90," + (.05 + depth * .3) + ")";
-          ctx.lineWidth = .4 + depth * 1.1;
-          ctx.moveTo(pa.x, pa.y);
-          ctx.lineTo(pb.x, pb.y);
-          ctx.stroke();
-        }
-      }
-
-      /* neurons, drawn back to front — close ones bigger, far ones small & blurred */
-      var order = [];
-      for (var i = 0; i < n; i++) order.push(i);
-      order.sort(function (a, b) { return proj[a].scale - proj[b].scale; });
-      for (var oi = 0; oi < order.length; oi++) {
-        var i = order[oi];
-        var pr = proj[i];
-        var rr = 1 + pr.t * 2.6;
-        ctx.save();
-        if (pr.t < .4) {
-          ctx.filter = "blur(" + ((.4 - pr.t) * 3.4) + "px)";
-        } else {
-          ctx.shadowColor = "rgba(255,100,82,.8)";
-          ctx.shadowBlur = (pr.t - .4) * 16;
-        }
-        ctx.beginPath();
-        ctx.arc(pr.x, pr.y, rr, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(255,110,90," + (.12 + pr.t * .55) + ")";
-        ctx.fill();
-        ctx.restore();
-      }
-    }
-    draw();
-    window.addEventListener("resize", draw);
-  })();
 </script>
 
 </body>
@@ -456,7 +346,6 @@ export function renderGeneratePage() {
         radial-gradient(ellipse at 12% 85%, rgba(124,58,237,.13) 0%, transparent 44%),
         var(--bg);
     }
-    #nn { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
     .page { position: relative; z-index: 1; width: min(640px, 94vw); margin: 0 auto; padding: 2.5rem 0 5rem; }
 
     /* header */
@@ -507,8 +396,6 @@ export function renderGeneratePage() {
   </style>
 </head>
 <body>
-
-<canvas id="nn"></canvas>
 
 <div class="page">
 
@@ -580,113 +467,6 @@ export function renderGeneratePage() {
       if (!v) { v = "sess_" + Date.now() + "_" + Math.floor(Math.random() * 1e9); localStorage.setItem(k, v); }
       window.__shiaSessionId = v;
     } catch (e) { window.__shiaSessionId = null; }
-  })();
-
-    /* static brain — neurons positioned on a brain silhouette, drawn once (no animation) */
-  (function () {
-    var canvas = document.getElementById("nn");
-    var ctx = canvas.getContext("2d");
-
-    function brainPoint(res) {
-      var side = Math.random() < .5 ? -1 : 1;
-      var u = Math.random(), v = Math.random();
-      var theta = 2 * Math.PI * u;
-      var phi = Math.acos(2 * v - 1);
-      var lx = Math.sin(phi) * Math.cos(theta);
-      var ly = Math.cos(phi);
-      var lz = Math.sin(phi) * Math.sin(theta);
-      if (side * lx < 0) lx *= .3;            /* flatten medial face -> longitudinal fissure */
-      var rx = 84 * res, ry = 116 * res, rz = 124 * res;
-      return { x: side * 54 * res + lx * rx, y: ly * ry - 8 * res, z: lz * rz };
-    }
-
-    function draw() {
-      var res = Math.min(innerWidth, innerHeight) < 640 ? .65 : 1;
-      canvas.width = Math.round(innerWidth * res);
-      canvas.height = Math.round(innerHeight * res);
-      var n = res < 1 ? 55 : 75;
-      var linkDist = 48 * res;
-      var focal = 420 * res;
-      var camDist = 480 * res;
-
-      var nodes = [];
-      for (var i = 0; i < n; i++) nodes.push(brainPoint(res));
-
-      var maxR = 0;
-      for (var i = 0; i < n; i++) {
-        var r = Math.sqrt(nodes[i].x * nodes[i].x + nodes[i].z * nodes[i].z);
-        if (r > maxR) maxR = r;
-      }
-      var scaleMin = focal / (camDist + maxR);
-      var scaleMax = focal / (camDist - maxR);
-
-      var rotation = .6;
-      var cos = Math.cos(rotation), sin = Math.sin(rotation);
-      var cx = canvas.width / 2, cy = canvas.height / 2;
-
-      var proj = new Array(n);
-      for (var i = 0; i < n; i++) {
-        var nd = nodes[i];
-        var xr = nd.x * cos + nd.z * sin;
-        var zr = -nd.x * sin + nd.z * cos;
-        var sc = focal / (camDist + zr);
-        var t = (sc - scaleMin) / (scaleMax - scaleMin);
-        if (t < 0) t = 0; else if (t > 1) t = 1;
-        proj[i] = { x: cx + xr * sc, y: cy + nd.y * sc, scale: sc, t: t };
-      }
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      /* starfield, drawn once at fixed brightness */
-      var starCount = Math.floor((canvas.width * canvas.height) / 4200);
-      for (var s = 0; s < starCount; s++) {
-        var sa = Math.min(1, .2 + Math.random() * .675);
-        ctx.beginPath();
-        ctx.arc(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 1.3 + .25, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(228,233,255," + sa.toFixed(3) + ")";
-        ctx.fill();
-      }
-
-      /* synapse mesh — brighter & thicker the closer to the viewer */
-      for (var i = 0; i < n; i++) {
-        for (var j = i + 1; j < n; j++) {
-          var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y, dz = nodes[i].z - nodes[j].z;
-          if (Math.sqrt(dx * dx + dy * dy + dz * dz) >= linkDist) continue;
-          var pa = proj[i], pb = proj[j];
-          var depth = (pa.t + pb.t) / 2;
-          ctx.beginPath();
-          ctx.strokeStyle = "rgba(255,110,90," + (.05 + depth * .3) + ")";
-          ctx.lineWidth = .4 + depth * 1.1;
-          ctx.moveTo(pa.x, pa.y);
-          ctx.lineTo(pb.x, pb.y);
-          ctx.stroke();
-        }
-      }
-
-      /* neurons, drawn back to front — close ones bigger, far ones small & blurred */
-      var order = [];
-      for (var i = 0; i < n; i++) order.push(i);
-      order.sort(function (a, b) { return proj[a].scale - proj[b].scale; });
-      for (var oi = 0; oi < order.length; oi++) {
-        var i = order[oi];
-        var pr = proj[i];
-        var rr = 1 + pr.t * 2.6;
-        ctx.save();
-        if (pr.t < .4) {
-          ctx.filter = "blur(" + ((.4 - pr.t) * 3.4) + "px)";
-        } else {
-          ctx.shadowColor = "rgba(255,100,82,.8)";
-          ctx.shadowBlur = (pr.t - .4) * 16;
-        }
-        ctx.beginPath();
-        ctx.arc(pr.x, pr.y, rr, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(255,110,90," + (.12 + pr.t * .55) + ")";
-        ctx.fill();
-        ctx.restore();
-      }
-    }
-    draw();
-    window.addEventListener("resize", draw);
   })();
 
   /* form submit */
@@ -967,7 +747,6 @@ export function renderAnalyzePage() {
         radial-gradient(ellipse at 12% 85%, rgba(124,58,237,.13) 0%, transparent 44%),
         var(--bg);
     }
-    #nn { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
     .page { position: relative; z-index: 1; width: min(880px, 94vw); margin: 0 auto; padding: 2.5rem 0 5rem; }
 
     /* header */
@@ -1075,8 +854,6 @@ export function renderAnalyzePage() {
 </head>
 <body>
 
-<canvas id="nn"></canvas>
-
 <div class="page">
 
   <header class="hdr">
@@ -1148,113 +925,6 @@ export function renderAnalyzePage() {
       if (!v) { v = "sess_" + Date.now() + "_" + Math.floor(Math.random() * 1e9); localStorage.setItem(k, v); }
       window.__shiaSessionId = v;
     } catch (e) { window.__shiaSessionId = null; }
-  })();
-
-    /* static brain — neurons positioned on a brain silhouette, drawn once (no animation) */
-  (function () {
-    var canvas = document.getElementById("nn");
-    var ctx = canvas.getContext("2d");
-
-    function brainPoint(res) {
-      var side = Math.random() < .5 ? -1 : 1;
-      var u = Math.random(), v = Math.random();
-      var theta = 2 * Math.PI * u;
-      var phi = Math.acos(2 * v - 1);
-      var lx = Math.sin(phi) * Math.cos(theta);
-      var ly = Math.cos(phi);
-      var lz = Math.sin(phi) * Math.sin(theta);
-      if (side * lx < 0) lx *= .3;            /* flatten medial face -> longitudinal fissure */
-      var rx = 84 * res, ry = 116 * res, rz = 124 * res;
-      return { x: side * 54 * res + lx * rx, y: ly * ry - 8 * res, z: lz * rz };
-    }
-
-    function draw() {
-      var res = Math.min(innerWidth, innerHeight) < 640 ? .65 : 1;
-      canvas.width = Math.round(innerWidth * res);
-      canvas.height = Math.round(innerHeight * res);
-      var n = res < 1 ? 55 : 75;
-      var linkDist = 48 * res;
-      var focal = 420 * res;
-      var camDist = 480 * res;
-
-      var nodes = [];
-      for (var i = 0; i < n; i++) nodes.push(brainPoint(res));
-
-      var maxR = 0;
-      for (var i = 0; i < n; i++) {
-        var r = Math.sqrt(nodes[i].x * nodes[i].x + nodes[i].z * nodes[i].z);
-        if (r > maxR) maxR = r;
-      }
-      var scaleMin = focal / (camDist + maxR);
-      var scaleMax = focal / (camDist - maxR);
-
-      var rotation = .6;
-      var cos = Math.cos(rotation), sin = Math.sin(rotation);
-      var cx = canvas.width / 2, cy = canvas.height / 2;
-
-      var proj = new Array(n);
-      for (var i = 0; i < n; i++) {
-        var nd = nodes[i];
-        var xr = nd.x * cos + nd.z * sin;
-        var zr = -nd.x * sin + nd.z * cos;
-        var sc = focal / (camDist + zr);
-        var t = (sc - scaleMin) / (scaleMax - scaleMin);
-        if (t < 0) t = 0; else if (t > 1) t = 1;
-        proj[i] = { x: cx + xr * sc, y: cy + nd.y * sc, scale: sc, t: t };
-      }
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      /* starfield, drawn once at fixed brightness */
-      var starCount = Math.floor((canvas.width * canvas.height) / 4200);
-      for (var s = 0; s < starCount; s++) {
-        var sa = Math.min(1, .2 + Math.random() * .675);
-        ctx.beginPath();
-        ctx.arc(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 1.3 + .25, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(228,233,255," + sa.toFixed(3) + ")";
-        ctx.fill();
-      }
-
-      /* synapse mesh — brighter & thicker the closer to the viewer */
-      for (var i = 0; i < n; i++) {
-        for (var j = i + 1; j < n; j++) {
-          var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y, dz = nodes[i].z - nodes[j].z;
-          if (Math.sqrt(dx * dx + dy * dy + dz * dz) >= linkDist) continue;
-          var pa = proj[i], pb = proj[j];
-          var depth = (pa.t + pb.t) / 2;
-          ctx.beginPath();
-          ctx.strokeStyle = "rgba(255,110,90," + (.05 + depth * .3) + ")";
-          ctx.lineWidth = .4 + depth * 1.1;
-          ctx.moveTo(pa.x, pa.y);
-          ctx.lineTo(pb.x, pb.y);
-          ctx.stroke();
-        }
-      }
-
-      /* neurons, drawn back to front — close ones bigger, far ones small & blurred */
-      var order = [];
-      for (var i = 0; i < n; i++) order.push(i);
-      order.sort(function (a, b) { return proj[a].scale - proj[b].scale; });
-      for (var oi = 0; oi < order.length; oi++) {
-        var i = order[oi];
-        var pr = proj[i];
-        var rr = 1 + pr.t * 2.6;
-        ctx.save();
-        if (pr.t < .4) {
-          ctx.filter = "blur(" + ((.4 - pr.t) * 3.4) + "px)";
-        } else {
-          ctx.shadowColor = "rgba(255,100,82,.8)";
-          ctx.shadowBlur = (pr.t - .4) * 16;
-        }
-        ctx.beginPath();
-        ctx.arc(pr.x, pr.y, rr, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(255,110,90," + (.12 + pr.t * .55) + ")";
-        ctx.fill();
-        ctx.restore();
-      }
-    }
-    draw();
-    window.addEventListener("resize", draw);
   })();
 
   /* analyze */
@@ -1368,7 +1038,6 @@ export function renderAnalyzeBusinessPage() {
         radial-gradient(ellipse at 70% 85%, rgba(22,163,74,.06) 0%, transparent 48%),
         var(--bg);
     }
-    #nn { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
     .page { position: relative; z-index: 1; width: min(880px, 94vw); margin: 0 auto; padding: 2.5rem 0 5rem; }
 
     /* header */
@@ -1521,8 +1190,6 @@ export function renderAnalyzeBusinessPage() {
 </head>
 <body>
 
-<canvas id="nn"></canvas>
-
 <div class="page">
 
   <header class="hdr">
@@ -1632,119 +1299,6 @@ export function renderAnalyzeBusinessPage() {
       if (!v) { v = "sess_" + Date.now() + "_" + Math.floor(Math.random() * 1e9); localStorage.setItem(k, v); }
       window.__shiaSessionId = v;
     } catch (e) { window.__shiaSessionId = null; }
-  })();
-
-  /* static brain — neurons positioned on a brain silhouette, drawn once (light theme, no animation) */
-  (function () {
-    var canvas = document.getElementById("nn");
-    var ctx = canvas.getContext("2d");
-
-    function brainPoint(res) {
-      var side = Math.random() < .5 ? -1 : 1;
-      var u = Math.random(), v = Math.random();
-      var theta = 2 * Math.PI * u;
-      var phi = Math.acos(2 * v - 1);
-      var lx = Math.sin(phi) * Math.cos(theta);
-      var ly = Math.cos(phi);
-      var lz = Math.sin(phi) * Math.sin(theta);
-      if (side * lx < 0) lx *= .3;
-      var rx = 84 * res, ry = 116 * res, rz = 124 * res;
-      return { x: side * 54 * res + lx * rx, y: ly * ry - 8 * res, z: lz * rz };
-    }
-
-    function draw() {
-      var res = Math.min(innerWidth, innerHeight) < 640 ? .65 : 1;
-      canvas.width = Math.round(innerWidth * res);
-      canvas.height = Math.round(innerHeight * res);
-      var n = res < 1 ? 55 : 75;
-      var linkDist = 48 * res;
-      var focal = 420 * res;
-      var camDist = 480 * res;
-
-      var nodes = [];
-      for (var i = 0; i < n; i++) nodes.push(brainPoint(res));
-
-      var maxR = 0;
-      for (var i = 0; i < n; i++) {
-        var r = Math.sqrt(nodes[i].x * nodes[i].x + nodes[i].z * nodes[i].z);
-        if (r > maxR) maxR = r;
-      }
-      var scaleMin = focal / (camDist + maxR);
-      var scaleMax = focal / (camDist - maxR);
-
-      var rotation = .6;
-      var cos = Math.cos(rotation), sin = Math.sin(rotation);
-      var cx = canvas.width / 2, cy = canvas.height / 2;
-
-      var proj = new Array(n);
-      for (var i = 0; i < n; i++) {
-        var nd = nodes[i];
-        var xr = nd.x * cos + nd.z * sin;
-        var zr = -nd.x * sin + nd.z * cos;
-        var sc = focal / (camDist + zr);
-        var t = (sc - scaleMin) / (scaleMax - scaleMin);
-        if (t < 0) t = 0; else if (t > 1) t = 1;
-        proj[i] = { x: cx + xr * sc, y: cy + nd.y * sc, scale: sc, t: t };
-      }
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      /* faint starfield, drawn once at fixed brightness */
-      var starCount = Math.floor((canvas.width * canvas.height) / 5200);
-      for (var s = 0; s < starCount; s++) {
-        var sa = .08 + Math.random() * .21;
-        ctx.beginPath();
-        ctx.arc(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 1.3 + .25, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(150,158,190," + sa.toFixed(3) + ")";
-        ctx.fill();
-      }
-
-      /* synapse mesh — soft blue, brighter & thicker the closer to the viewer */
-      for (var i = 0; i < n; i++) {
-        for (var j = i + 1; j < n; j++) {
-          var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y, dz = nodes[i].z - nodes[j].z;
-          if (Math.sqrt(dx * dx + dy * dy + dz * dz) >= linkDist) continue;
-          var pa = proj[i], pb = proj[j];
-          var depth = (pa.t + pb.t) / 2;
-          ctx.beginPath();
-          ctx.strokeStyle = "rgba(37,99,235," + (.03 + depth * .14) + ")";
-          ctx.lineWidth = .4 + depth * 1.1;
-          ctx.moveTo(pa.x, pa.y);
-          ctx.lineTo(pb.x, pb.y);
-          ctx.stroke();
-        }
-      }
-
-      /* neurons, drawn back to front — mostly blue, a few scattered orange */
-      var order = [];
-      for (var i = 0; i < n; i++) order.push(i);
-      order.sort(function (a, b) { return proj[a].scale - proj[b].scale; });
-      for (var oi = 0; oi < order.length; oi++) {
-        var i = order[oi];
-        var pr = proj[i];
-        var rr = 1 + pr.t * 2.6;
-        var orange = i % 7 === 0;
-        ctx.save();
-        if (pr.t < .4) {
-          ctx.filter = "blur(" + ((.4 - pr.t) * 3.4) + "px)";
-        } else if (orange) {
-          ctx.shadowColor = "rgba(249,115,22,.4)";
-          ctx.shadowBlur = (pr.t - .4) * 14;
-        } else {
-          ctx.shadowColor = "rgba(37,99,235,.35)";
-          ctx.shadowBlur = (pr.t - .4) * 14;
-        }
-        ctx.beginPath();
-        ctx.arc(pr.x, pr.y, rr, 0, Math.PI * 2);
-        ctx.fillStyle = orange
-          ? "rgba(249,115,22," + (.15 + pr.t * .45) + ")"
-          : "rgba(37,99,235," + (.08 + pr.t * .32) + ")";
-        ctx.fill();
-        ctx.restore();
-      }
-    }
-    draw();
-    window.addEventListener("resize", draw);
   })();
 
   /* page logic */
@@ -1934,7 +1488,6 @@ export function renderDashboardPage({ userId, previews, payments, sprints }) {
         radial-gradient(ellipse at 12% 85%, rgba(124,58,237,.13) 0%, transparent 44%),
         var(--bg);
     }
-    #nn { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
     .page { position: relative; z-index: 1; width: min(880px, 94vw); margin: 0 auto; padding: 2.5rem 0 5rem; }
 
     /* header */
@@ -1994,8 +1547,6 @@ export function renderDashboardPage({ userId, previews, payments, sprints }) {
   </style>
 </head>
 <body>
-
-<canvas id="nn"></canvas>
 
 <div class="page">
 
@@ -2065,113 +1616,6 @@ export function renderDashboardPage({ userId, previews, payments, sprints }) {
       if (!v) { v = "sess_" + Date.now() + "_" + Math.floor(Math.random() * 1e9); localStorage.setItem(k, v); }
       window.__shiaSessionId = v;
     } catch (e) { window.__shiaSessionId = null; }
-  })();
-
-    /* static brain — neurons positioned on a brain silhouette, drawn once (no animation) */
-  (function () {
-    var canvas = document.getElementById("nn");
-    var ctx = canvas.getContext("2d");
-
-    function brainPoint(res) {
-      var side = Math.random() < .5 ? -1 : 1;
-      var u = Math.random(), v = Math.random();
-      var theta = 2 * Math.PI * u;
-      var phi = Math.acos(2 * v - 1);
-      var lx = Math.sin(phi) * Math.cos(theta);
-      var ly = Math.cos(phi);
-      var lz = Math.sin(phi) * Math.sin(theta);
-      if (side * lx < 0) lx *= .3;            /* flatten medial face -> longitudinal fissure */
-      var rx = 84 * res, ry = 116 * res, rz = 124 * res;
-      return { x: side * 54 * res + lx * rx, y: ly * ry - 8 * res, z: lz * rz };
-    }
-
-    function draw() {
-      var res = Math.min(innerWidth, innerHeight) < 640 ? .65 : 1;
-      canvas.width = Math.round(innerWidth * res);
-      canvas.height = Math.round(innerHeight * res);
-      var n = res < 1 ? 55 : 75;
-      var linkDist = 48 * res;
-      var focal = 420 * res;
-      var camDist = 480 * res;
-
-      var nodes = [];
-      for (var i = 0; i < n; i++) nodes.push(brainPoint(res));
-
-      var maxR = 0;
-      for (var i = 0; i < n; i++) {
-        var r = Math.sqrt(nodes[i].x * nodes[i].x + nodes[i].z * nodes[i].z);
-        if (r > maxR) maxR = r;
-      }
-      var scaleMin = focal / (camDist + maxR);
-      var scaleMax = focal / (camDist - maxR);
-
-      var rotation = .6;
-      var cos = Math.cos(rotation), sin = Math.sin(rotation);
-      var cx = canvas.width / 2, cy = canvas.height / 2;
-
-      var proj = new Array(n);
-      for (var i = 0; i < n; i++) {
-        var nd = nodes[i];
-        var xr = nd.x * cos + nd.z * sin;
-        var zr = -nd.x * sin + nd.z * cos;
-        var sc = focal / (camDist + zr);
-        var t = (sc - scaleMin) / (scaleMax - scaleMin);
-        if (t < 0) t = 0; else if (t > 1) t = 1;
-        proj[i] = { x: cx + xr * sc, y: cy + nd.y * sc, scale: sc, t: t };
-      }
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      /* starfield, drawn once at fixed brightness */
-      var starCount = Math.floor((canvas.width * canvas.height) / 4200);
-      for (var s = 0; s < starCount; s++) {
-        var sa = Math.min(1, .2 + Math.random() * .675);
-        ctx.beginPath();
-        ctx.arc(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 1.3 + .25, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(228,233,255," + sa.toFixed(3) + ")";
-        ctx.fill();
-      }
-
-      /* synapse mesh — brighter & thicker the closer to the viewer */
-      for (var i = 0; i < n; i++) {
-        for (var j = i + 1; j < n; j++) {
-          var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y, dz = nodes[i].z - nodes[j].z;
-          if (Math.sqrt(dx * dx + dy * dy + dz * dz) >= linkDist) continue;
-          var pa = proj[i], pb = proj[j];
-          var depth = (pa.t + pb.t) / 2;
-          ctx.beginPath();
-          ctx.strokeStyle = "rgba(255,110,90," + (.05 + depth * .3) + ")";
-          ctx.lineWidth = .4 + depth * 1.1;
-          ctx.moveTo(pa.x, pa.y);
-          ctx.lineTo(pb.x, pb.y);
-          ctx.stroke();
-        }
-      }
-
-      /* neurons, drawn back to front — close ones bigger, far ones small & blurred */
-      var order = [];
-      for (var i = 0; i < n; i++) order.push(i);
-      order.sort(function (a, b) { return proj[a].scale - proj[b].scale; });
-      for (var oi = 0; oi < order.length; oi++) {
-        var i = order[oi];
-        var pr = proj[i];
-        var rr = 1 + pr.t * 2.6;
-        ctx.save();
-        if (pr.t < .4) {
-          ctx.filter = "blur(" + ((.4 - pr.t) * 3.4) + "px)";
-        } else {
-          ctx.shadowColor = "rgba(255,100,82,.8)";
-          ctx.shadowBlur = (pr.t - .4) * 16;
-        }
-        ctx.beginPath();
-        ctx.arc(pr.x, pr.y, rr, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(255,110,90," + (.12 + pr.t * .55) + ")";
-        ctx.fill();
-        ctx.restore();
-      }
-    }
-    draw();
-    window.addEventListener("resize", draw);
   })();
 </script>
 
