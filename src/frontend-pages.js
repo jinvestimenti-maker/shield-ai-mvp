@@ -309,32 +309,12 @@ export function renderLandingPage() {
     } catch (e) { window.__shiaSessionId = null; }
   })();
 
-    /* 3D animated brain — neurons positioned on a brain silhouette, slowly rotating */
+    /* static brain — neurons positioned on a brain silhouette, drawn once (no animation) */
   (function () {
     var canvas = document.getElementById("nn");
     var ctx = canvas.getContext("2d");
 
-    var N, LINK_DIST, FOCAL, CAM_DIST, RES = 1;
-    var nodes = [], adjacency = [], pulses = [], flashes = [], stars = [];
-    var proj = [], order = [];
-    var rotation = 0, scaleMin = 1, scaleMax = 1;
-
-    var FRAME_INTERVAL = 1000 / 30;
-    var lastFrame = 0;
-    var typingPause = false;
-    var resumeTimer = null;
-
-    function resize() {
-      RES = Math.min(innerWidth, innerHeight) < 640 ? .65 : 1;
-      canvas.width = Math.round(innerWidth * RES);
-      canvas.height = Math.round(innerHeight * RES);
-      N = RES < 1 ? 55 : 75;
-      LINK_DIST = 48 * RES;
-      FOCAL = 420 * RES;
-      CAM_DIST = 480 * RES;
-    }
-
-    function brainPoint() {
+    function brainPoint(res) {
       var side = Math.random() < .5 ? -1 : 1;
       var u = Math.random(), v = Math.random();
       var theta = 2 * Math.PI * u;
@@ -343,150 +323,83 @@ export function renderLandingPage() {
       var ly = Math.cos(phi);
       var lz = Math.sin(phi) * Math.sin(theta);
       if (side * lx < 0) lx *= .3;            /* flatten medial face -> longitudinal fissure */
-      var rx = 84 * RES, ry = 116 * RES, rz = 124 * RES;
-      return { x: side * 54 * RES + lx * rx, y: ly * ry - 8 * RES, z: lz * rz };
+      var rx = 84 * res, ry = 116 * res, rz = 124 * res;
+      return { x: side * 54 * res + lx * rx, y: ly * ry - 8 * res, z: lz * rz };
     }
 
-    function init() {
-      nodes = [];
-      for (var i = 0; i < N; i++) nodes.push(brainPoint());
+    function draw() {
+      var res = Math.min(innerWidth, innerHeight) < 640 ? .65 : 1;
+      canvas.width = Math.round(innerWidth * res);
+      canvas.height = Math.round(innerHeight * res);
+      var n = res < 1 ? 55 : 75;
+      var linkDist = 48 * res;
+      var focal = 420 * res;
+      var camDist = 480 * res;
 
-      adjacency = [];
-      for (var i = 0; i < N; i++) adjacency.push([]);
-      for (var i = 0; i < N; i++) {
-        for (var j = i + 1; j < N; j++) {
-          var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y, dz = nodes[i].z - nodes[j].z;
-          if (Math.sqrt(dx * dx + dy * dy + dz * dz) < LINK_DIST) {
-            adjacency[i].push(j);
-            adjacency[j].push(i);
-          }
-        }
-      }
+      var nodes = [];
+      for (var i = 0; i < n; i++) nodes.push(brainPoint(res));
 
       var maxR = 0;
-      for (var i = 0; i < N; i++) {
+      for (var i = 0; i < n; i++) {
         var r = Math.sqrt(nodes[i].x * nodes[i].x + nodes[i].z * nodes[i].z);
         if (r > maxR) maxR = r;
       }
-      scaleMin = FOCAL / (CAM_DIST + maxR);
-      scaleMax = FOCAL / (CAM_DIST - maxR);
+      var scaleMin = focal / (camDist + maxR);
+      var scaleMax = focal / (camDist - maxR);
 
-      pulses = [];
-      flashes = new Array(N).fill(0);
-      proj = new Array(N);
-      order = [];
-      for (var i = 0; i < N; i++) order.push(i);
-
-      stars = [];
-      var starCount = Math.floor((canvas.width * canvas.height) / 4200);
-      for (var s = 0; s < starCount; s++) {
-        stars.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height,
-          r: Math.random() * 1.3 + .25,
-          base: .2 + Math.random() * .45,
-          amp: Math.random() * .45,
-          speed: .0007 + Math.random() * .0022,
-          phase: Math.random() * Math.PI * 2
-        });
-      }
-    }
-
-    function drawStars(now) {
-      for (var i = 0; i < stars.length; i++) {
-        var st = stars[i];
-        var a = st.base + st.amp * Math.sin(now * st.speed + st.phase);
-        if (a < 0) a = 0; else if (a > 1) a = 1;
-        ctx.beginPath();
-        ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(228,233,255," + a.toFixed(3) + ")";
-        ctx.fill();
-      }
-    }
-
-    function fire(i) {
-      flashes[i] = 1;
-      if (Math.random() < .85 && adjacency[i].length) {
-        var j = adjacency[i][Math.floor(Math.random() * adjacency[i].length)];
-        pulses.push({ a: i, b: j, t: 0, speed: .022 + Math.random() * .026 });
-      }
-    }
-
-    function tick(now) {
-      now = now || performance.now();
-      requestAnimationFrame(tick);
-      if (typingPause || now - lastFrame < FRAME_INTERVAL) return;
-      lastFrame = now;
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawStars(now);
-
-      rotation += .0028;
+      var rotation = .6;
       var cos = Math.cos(rotation), sin = Math.sin(rotation);
       var cx = canvas.width / 2, cy = canvas.height / 2;
 
-      for (var i = 0; i < N; i++) {
-        var n = nodes[i];
-        var xr = n.x * cos + n.z * sin;
-        var zr = -n.x * sin + n.z * cos;
-        var sc = FOCAL / (CAM_DIST + zr);
+      var proj = new Array(n);
+      for (var i = 0; i < n; i++) {
+        var nd = nodes[i];
+        var xr = nd.x * cos + nd.z * sin;
+        var zr = -nd.x * sin + nd.z * cos;
+        var sc = focal / (camDist + zr);
         var t = (sc - scaleMin) / (scaleMax - scaleMin);
         if (t < 0) t = 0; else if (t > 1) t = 1;
-        proj[i] = { x: cx + xr * sc, y: cy + n.y * sc, scale: sc, t: t };
-        flashes[i] = Math.max(0, flashes[i] - .035);
+        proj[i] = { x: cx + xr * sc, y: cy + nd.y * sc, scale: sc, t: t };
       }
-      order.sort(function (a, b) { return proj[a].scale - proj[b].scale; });
 
-      if (Math.random() < .07) fire(Math.floor(Math.random() * N));
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      /* synapse mesh — brighter & thicker the closer to the viewer, glows when firing */
-      for (var i = 0; i < N; i++) {
-        var nb = adjacency[i];
-        for (var k = 0; k < nb.length; k++) {
-          var j = nb[k];
-          if (j < i) continue;
+      /* starfield, drawn once at fixed brightness */
+      var starCount = Math.floor((canvas.width * canvas.height) / 4200);
+      for (var s = 0; s < starCount; s++) {
+        var sa = Math.min(1, .2 + Math.random() * .675);
+        ctx.beginPath();
+        ctx.arc(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 1.3 + .25, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(228,233,255," + sa.toFixed(3) + ")";
+        ctx.fill();
+      }
+
+      /* synapse mesh — brighter & thicker the closer to the viewer */
+      for (var i = 0; i < n; i++) {
+        for (var j = i + 1; j < n; j++) {
+          var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y, dz = nodes[i].z - nodes[j].z;
+          if (Math.sqrt(dx * dx + dy * dy + dz * dz) >= linkDist) continue;
           var pa = proj[i], pb = proj[j];
           var depth = (pa.t + pb.t) / 2;
-          var boost = Math.max(flashes[i], flashes[j]) * .55;
           ctx.beginPath();
-          ctx.strokeStyle = "rgba(255,110,90," + (.05 + depth * .3 + boost) + ")";
-          ctx.lineWidth = .4 + depth * 1.1 + boost * 1.3;
+          ctx.strokeStyle = "rgba(255,110,90," + (.05 + depth * .3) + ")";
+          ctx.lineWidth = .4 + depth * 1.1;
           ctx.moveTo(pa.x, pa.y);
           ctx.lineTo(pb.x, pb.y);
           ctx.stroke();
         }
       }
 
-      /* electrical impulses travelling along synapses with a glowing trail */
-      for (var p = pulses.length - 1; p >= 0; p--) {
-        var pulse = pulses[p];
-        pulse.t += pulse.speed;
-        if (pulse.t >= 1) { fire(pulse.b); pulses.splice(p, 1); continue; }
-        var pa = proj[pulse.a], pb = proj[pulse.b];
-        var x = pa.x + (pb.x - pa.x) * pulse.t;
-        var y = pa.y + (pb.y - pa.y) * pulse.t;
-        var depth = (pa.t + pb.t) / 2;
-        var rad = 5 + depth * 5;
-        var glow = ctx.createRadialGradient(x, y, 0, x, y, rad);
-        glow.addColorStop(0, "rgba(255,221,195," + (.55 + depth * .4) + ")");
-        glow.addColorStop(1, "rgba(255,100,82,0)");
-        ctx.fillStyle = glow;
-        ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(x, y, 1.3 + depth * 1.1, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(255,240,228," + (.7 + depth * .3) + ")";
-        ctx.fill();
-      }
-
-      /* neurons, drawn back to front — close ones bigger & glowing, far ones small & blurred */
+      /* neurons, drawn back to front — close ones bigger, far ones small & blurred */
+      var order = [];
+      for (var i = 0; i < n; i++) order.push(i);
+      order.sort(function (a, b) { return proj[a].scale - proj[b].scale; });
       for (var oi = 0; oi < order.length; oi++) {
         var i = order[oi];
-        var pr = proj[i], flash = flashes[i];
-        var rr = (1 + pr.t * 2.6) + flash * 3.2;
+        var pr = proj[i];
+        var rr = 1 + pr.t * 2.6;
         ctx.save();
-        if (flash > .05) {
-          ctx.shadowColor = "rgba(255,225,195," + Math.min(1, flash) + ")";
-          ctx.shadowBlur = 8 + flash * 26;
-        } else if (pr.t < .4) {
+        if (pr.t < .4) {
           ctx.filter = "blur(" + ((.4 - pr.t) * 3.4) + "px)";
         } else {
           ctx.shadowColor = "rgba(255,100,82,.8)";
@@ -494,25 +407,13 @@ export function renderLandingPage() {
         }
         ctx.beginPath();
         ctx.arc(pr.x, pr.y, rr, 0, Math.PI * 2);
-        ctx.fillStyle = flash > .05
-          ? "rgba(255,232,214," + Math.min(1, .4 + flash * .6) + ")"
-          : "rgba(255,110,90," + (.12 + pr.t * .55) + ")";
+        ctx.fillStyle = "rgba(255,110,90," + (.12 + pr.t * .55) + ")";
         ctx.fill();
         ctx.restore();
       }
     }
-    resize(); init(); tick();
-    window.addEventListener("resize", function () { resize(); init(); });
-
-    /* pause heavy rendering while the user is typing, resume shortly after */
-    document.addEventListener("input", function (e) {
-      var tag = e.target && e.target.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA") {
-        typingPause = true;
-        if (resumeTimer) clearTimeout(resumeTimer);
-        resumeTimer = setTimeout(function () { typingPause = false; }, 500);
-      }
-    });
+    draw();
+    window.addEventListener("resize", draw);
   })();
 </script>
 
@@ -681,32 +582,12 @@ export function renderGeneratePage() {
     } catch (e) { window.__shiaSessionId = null; }
   })();
 
-    /* 3D animated brain — neurons positioned on a brain silhouette, slowly rotating */
+    /* static brain — neurons positioned on a brain silhouette, drawn once (no animation) */
   (function () {
     var canvas = document.getElementById("nn");
     var ctx = canvas.getContext("2d");
 
-    var N, LINK_DIST, FOCAL, CAM_DIST, RES = 1;
-    var nodes = [], adjacency = [], pulses = [], flashes = [], stars = [];
-    var proj = [], order = [];
-    var rotation = 0, scaleMin = 1, scaleMax = 1;
-
-    var FRAME_INTERVAL = 1000 / 30;
-    var lastFrame = 0;
-    var typingPause = false;
-    var resumeTimer = null;
-
-    function resize() {
-      RES = Math.min(innerWidth, innerHeight) < 640 ? .65 : 1;
-      canvas.width = Math.round(innerWidth * RES);
-      canvas.height = Math.round(innerHeight * RES);
-      N = RES < 1 ? 55 : 75;
-      LINK_DIST = 48 * RES;
-      FOCAL = 420 * RES;
-      CAM_DIST = 480 * RES;
-    }
-
-    function brainPoint() {
+    function brainPoint(res) {
       var side = Math.random() < .5 ? -1 : 1;
       var u = Math.random(), v = Math.random();
       var theta = 2 * Math.PI * u;
@@ -715,150 +596,83 @@ export function renderGeneratePage() {
       var ly = Math.cos(phi);
       var lz = Math.sin(phi) * Math.sin(theta);
       if (side * lx < 0) lx *= .3;            /* flatten medial face -> longitudinal fissure */
-      var rx = 84 * RES, ry = 116 * RES, rz = 124 * RES;
-      return { x: side * 54 * RES + lx * rx, y: ly * ry - 8 * RES, z: lz * rz };
+      var rx = 84 * res, ry = 116 * res, rz = 124 * res;
+      return { x: side * 54 * res + lx * rx, y: ly * ry - 8 * res, z: lz * rz };
     }
 
-    function init() {
-      nodes = [];
-      for (var i = 0; i < N; i++) nodes.push(brainPoint());
+    function draw() {
+      var res = Math.min(innerWidth, innerHeight) < 640 ? .65 : 1;
+      canvas.width = Math.round(innerWidth * res);
+      canvas.height = Math.round(innerHeight * res);
+      var n = res < 1 ? 55 : 75;
+      var linkDist = 48 * res;
+      var focal = 420 * res;
+      var camDist = 480 * res;
 
-      adjacency = [];
-      for (var i = 0; i < N; i++) adjacency.push([]);
-      for (var i = 0; i < N; i++) {
-        for (var j = i + 1; j < N; j++) {
-          var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y, dz = nodes[i].z - nodes[j].z;
-          if (Math.sqrt(dx * dx + dy * dy + dz * dz) < LINK_DIST) {
-            adjacency[i].push(j);
-            adjacency[j].push(i);
-          }
-        }
-      }
+      var nodes = [];
+      for (var i = 0; i < n; i++) nodes.push(brainPoint(res));
 
       var maxR = 0;
-      for (var i = 0; i < N; i++) {
+      for (var i = 0; i < n; i++) {
         var r = Math.sqrt(nodes[i].x * nodes[i].x + nodes[i].z * nodes[i].z);
         if (r > maxR) maxR = r;
       }
-      scaleMin = FOCAL / (CAM_DIST + maxR);
-      scaleMax = FOCAL / (CAM_DIST - maxR);
+      var scaleMin = focal / (camDist + maxR);
+      var scaleMax = focal / (camDist - maxR);
 
-      pulses = [];
-      flashes = new Array(N).fill(0);
-      proj = new Array(N);
-      order = [];
-      for (var i = 0; i < N; i++) order.push(i);
-
-      stars = [];
-      var starCount = Math.floor((canvas.width * canvas.height) / 4200);
-      for (var s = 0; s < starCount; s++) {
-        stars.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height,
-          r: Math.random() * 1.3 + .25,
-          base: .2 + Math.random() * .45,
-          amp: Math.random() * .45,
-          speed: .0007 + Math.random() * .0022,
-          phase: Math.random() * Math.PI * 2
-        });
-      }
-    }
-
-    function drawStars(now) {
-      for (var i = 0; i < stars.length; i++) {
-        var st = stars[i];
-        var a = st.base + st.amp * Math.sin(now * st.speed + st.phase);
-        if (a < 0) a = 0; else if (a > 1) a = 1;
-        ctx.beginPath();
-        ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(228,233,255," + a.toFixed(3) + ")";
-        ctx.fill();
-      }
-    }
-
-    function fire(i) {
-      flashes[i] = 1;
-      if (Math.random() < .85 && adjacency[i].length) {
-        var j = adjacency[i][Math.floor(Math.random() * adjacency[i].length)];
-        pulses.push({ a: i, b: j, t: 0, speed: .022 + Math.random() * .026 });
-      }
-    }
-
-    function tick(now) {
-      now = now || performance.now();
-      requestAnimationFrame(tick);
-      if (typingPause || now - lastFrame < FRAME_INTERVAL) return;
-      lastFrame = now;
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawStars(now);
-
-      rotation += .0028;
+      var rotation = .6;
       var cos = Math.cos(rotation), sin = Math.sin(rotation);
       var cx = canvas.width / 2, cy = canvas.height / 2;
 
-      for (var i = 0; i < N; i++) {
-        var n = nodes[i];
-        var xr = n.x * cos + n.z * sin;
-        var zr = -n.x * sin + n.z * cos;
-        var sc = FOCAL / (CAM_DIST + zr);
+      var proj = new Array(n);
+      for (var i = 0; i < n; i++) {
+        var nd = nodes[i];
+        var xr = nd.x * cos + nd.z * sin;
+        var zr = -nd.x * sin + nd.z * cos;
+        var sc = focal / (camDist + zr);
         var t = (sc - scaleMin) / (scaleMax - scaleMin);
         if (t < 0) t = 0; else if (t > 1) t = 1;
-        proj[i] = { x: cx + xr * sc, y: cy + n.y * sc, scale: sc, t: t };
-        flashes[i] = Math.max(0, flashes[i] - .035);
+        proj[i] = { x: cx + xr * sc, y: cy + nd.y * sc, scale: sc, t: t };
       }
-      order.sort(function (a, b) { return proj[a].scale - proj[b].scale; });
 
-      if (Math.random() < .07) fire(Math.floor(Math.random() * N));
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      /* synapse mesh — brighter & thicker the closer to the viewer, glows when firing */
-      for (var i = 0; i < N; i++) {
-        var nb = adjacency[i];
-        for (var k = 0; k < nb.length; k++) {
-          var j = nb[k];
-          if (j < i) continue;
+      /* starfield, drawn once at fixed brightness */
+      var starCount = Math.floor((canvas.width * canvas.height) / 4200);
+      for (var s = 0; s < starCount; s++) {
+        var sa = Math.min(1, .2 + Math.random() * .675);
+        ctx.beginPath();
+        ctx.arc(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 1.3 + .25, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(228,233,255," + sa.toFixed(3) + ")";
+        ctx.fill();
+      }
+
+      /* synapse mesh — brighter & thicker the closer to the viewer */
+      for (var i = 0; i < n; i++) {
+        for (var j = i + 1; j < n; j++) {
+          var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y, dz = nodes[i].z - nodes[j].z;
+          if (Math.sqrt(dx * dx + dy * dy + dz * dz) >= linkDist) continue;
           var pa = proj[i], pb = proj[j];
           var depth = (pa.t + pb.t) / 2;
-          var boost = Math.max(flashes[i], flashes[j]) * .55;
           ctx.beginPath();
-          ctx.strokeStyle = "rgba(255,110,90," + (.05 + depth * .3 + boost) + ")";
-          ctx.lineWidth = .4 + depth * 1.1 + boost * 1.3;
+          ctx.strokeStyle = "rgba(255,110,90," + (.05 + depth * .3) + ")";
+          ctx.lineWidth = .4 + depth * 1.1;
           ctx.moveTo(pa.x, pa.y);
           ctx.lineTo(pb.x, pb.y);
           ctx.stroke();
         }
       }
 
-      /* electrical impulses travelling along synapses with a glowing trail */
-      for (var p = pulses.length - 1; p >= 0; p--) {
-        var pulse = pulses[p];
-        pulse.t += pulse.speed;
-        if (pulse.t >= 1) { fire(pulse.b); pulses.splice(p, 1); continue; }
-        var pa = proj[pulse.a], pb = proj[pulse.b];
-        var x = pa.x + (pb.x - pa.x) * pulse.t;
-        var y = pa.y + (pb.y - pa.y) * pulse.t;
-        var depth = (pa.t + pb.t) / 2;
-        var rad = 5 + depth * 5;
-        var glow = ctx.createRadialGradient(x, y, 0, x, y, rad);
-        glow.addColorStop(0, "rgba(255,221,195," + (.55 + depth * .4) + ")");
-        glow.addColorStop(1, "rgba(255,100,82,0)");
-        ctx.fillStyle = glow;
-        ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(x, y, 1.3 + depth * 1.1, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(255,240,228," + (.7 + depth * .3) + ")";
-        ctx.fill();
-      }
-
-      /* neurons, drawn back to front — close ones bigger & glowing, far ones small & blurred */
+      /* neurons, drawn back to front — close ones bigger, far ones small & blurred */
+      var order = [];
+      for (var i = 0; i < n; i++) order.push(i);
+      order.sort(function (a, b) { return proj[a].scale - proj[b].scale; });
       for (var oi = 0; oi < order.length; oi++) {
         var i = order[oi];
-        var pr = proj[i], flash = flashes[i];
-        var rr = (1 + pr.t * 2.6) + flash * 3.2;
+        var pr = proj[i];
+        var rr = 1 + pr.t * 2.6;
         ctx.save();
-        if (flash > .05) {
-          ctx.shadowColor = "rgba(255,225,195," + Math.min(1, flash) + ")";
-          ctx.shadowBlur = 8 + flash * 26;
-        } else if (pr.t < .4) {
+        if (pr.t < .4) {
           ctx.filter = "blur(" + ((.4 - pr.t) * 3.4) + "px)";
         } else {
           ctx.shadowColor = "rgba(255,100,82,.8)";
@@ -866,25 +680,13 @@ export function renderGeneratePage() {
         }
         ctx.beginPath();
         ctx.arc(pr.x, pr.y, rr, 0, Math.PI * 2);
-        ctx.fillStyle = flash > .05
-          ? "rgba(255,232,214," + Math.min(1, .4 + flash * .6) + ")"
-          : "rgba(255,110,90," + (.12 + pr.t * .55) + ")";
+        ctx.fillStyle = "rgba(255,110,90," + (.12 + pr.t * .55) + ")";
         ctx.fill();
         ctx.restore();
       }
     }
-    resize(); init(); tick();
-    window.addEventListener("resize", function () { resize(); init(); });
-
-    /* pause heavy rendering while the user is typing, resume shortly after */
-    document.addEventListener("input", function (e) {
-      var tag = e.target && e.target.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA") {
-        typingPause = true;
-        if (resumeTimer) clearTimeout(resumeTimer);
-        resumeTimer = setTimeout(function () { typingPause = false; }, 500);
-      }
-    });
+    draw();
+    window.addEventListener("resize", draw);
   })();
 
   /* form submit */
@@ -1348,32 +1150,12 @@ export function renderAnalyzePage() {
     } catch (e) { window.__shiaSessionId = null; }
   })();
 
-    /* 3D animated brain — neurons positioned on a brain silhouette, slowly rotating */
+    /* static brain — neurons positioned on a brain silhouette, drawn once (no animation) */
   (function () {
     var canvas = document.getElementById("nn");
     var ctx = canvas.getContext("2d");
 
-    var N, LINK_DIST, FOCAL, CAM_DIST, RES = 1;
-    var nodes = [], adjacency = [], pulses = [], flashes = [], stars = [];
-    var proj = [], order = [];
-    var rotation = 0, scaleMin = 1, scaleMax = 1;
-
-    var FRAME_INTERVAL = 1000 / 30;
-    var lastFrame = 0;
-    var typingPause = false;
-    var resumeTimer = null;
-
-    function resize() {
-      RES = Math.min(innerWidth, innerHeight) < 640 ? .65 : 1;
-      canvas.width = Math.round(innerWidth * RES);
-      canvas.height = Math.round(innerHeight * RES);
-      N = RES < 1 ? 55 : 75;
-      LINK_DIST = 48 * RES;
-      FOCAL = 420 * RES;
-      CAM_DIST = 480 * RES;
-    }
-
-    function brainPoint() {
+    function brainPoint(res) {
       var side = Math.random() < .5 ? -1 : 1;
       var u = Math.random(), v = Math.random();
       var theta = 2 * Math.PI * u;
@@ -1382,150 +1164,83 @@ export function renderAnalyzePage() {
       var ly = Math.cos(phi);
       var lz = Math.sin(phi) * Math.sin(theta);
       if (side * lx < 0) lx *= .3;            /* flatten medial face -> longitudinal fissure */
-      var rx = 84 * RES, ry = 116 * RES, rz = 124 * RES;
-      return { x: side * 54 * RES + lx * rx, y: ly * ry - 8 * RES, z: lz * rz };
+      var rx = 84 * res, ry = 116 * res, rz = 124 * res;
+      return { x: side * 54 * res + lx * rx, y: ly * ry - 8 * res, z: lz * rz };
     }
 
-    function init() {
-      nodes = [];
-      for (var i = 0; i < N; i++) nodes.push(brainPoint());
+    function draw() {
+      var res = Math.min(innerWidth, innerHeight) < 640 ? .65 : 1;
+      canvas.width = Math.round(innerWidth * res);
+      canvas.height = Math.round(innerHeight * res);
+      var n = res < 1 ? 55 : 75;
+      var linkDist = 48 * res;
+      var focal = 420 * res;
+      var camDist = 480 * res;
 
-      adjacency = [];
-      for (var i = 0; i < N; i++) adjacency.push([]);
-      for (var i = 0; i < N; i++) {
-        for (var j = i + 1; j < N; j++) {
-          var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y, dz = nodes[i].z - nodes[j].z;
-          if (Math.sqrt(dx * dx + dy * dy + dz * dz) < LINK_DIST) {
-            adjacency[i].push(j);
-            adjacency[j].push(i);
-          }
-        }
-      }
+      var nodes = [];
+      for (var i = 0; i < n; i++) nodes.push(brainPoint(res));
 
       var maxR = 0;
-      for (var i = 0; i < N; i++) {
+      for (var i = 0; i < n; i++) {
         var r = Math.sqrt(nodes[i].x * nodes[i].x + nodes[i].z * nodes[i].z);
         if (r > maxR) maxR = r;
       }
-      scaleMin = FOCAL / (CAM_DIST + maxR);
-      scaleMax = FOCAL / (CAM_DIST - maxR);
+      var scaleMin = focal / (camDist + maxR);
+      var scaleMax = focal / (camDist - maxR);
 
-      pulses = [];
-      flashes = new Array(N).fill(0);
-      proj = new Array(N);
-      order = [];
-      for (var i = 0; i < N; i++) order.push(i);
-
-      stars = [];
-      var starCount = Math.floor((canvas.width * canvas.height) / 4200);
-      for (var s = 0; s < starCount; s++) {
-        stars.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height,
-          r: Math.random() * 1.3 + .25,
-          base: .2 + Math.random() * .45,
-          amp: Math.random() * .45,
-          speed: .0007 + Math.random() * .0022,
-          phase: Math.random() * Math.PI * 2
-        });
-      }
-    }
-
-    function drawStars(now) {
-      for (var i = 0; i < stars.length; i++) {
-        var st = stars[i];
-        var a = st.base + st.amp * Math.sin(now * st.speed + st.phase);
-        if (a < 0) a = 0; else if (a > 1) a = 1;
-        ctx.beginPath();
-        ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(228,233,255," + a.toFixed(3) + ")";
-        ctx.fill();
-      }
-    }
-
-    function fire(i) {
-      flashes[i] = 1;
-      if (Math.random() < .85 && adjacency[i].length) {
-        var j = adjacency[i][Math.floor(Math.random() * adjacency[i].length)];
-        pulses.push({ a: i, b: j, t: 0, speed: .022 + Math.random() * .026 });
-      }
-    }
-
-    function tick(now) {
-      now = now || performance.now();
-      requestAnimationFrame(tick);
-      if (typingPause || now - lastFrame < FRAME_INTERVAL) return;
-      lastFrame = now;
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawStars(now);
-
-      rotation += .0028;
+      var rotation = .6;
       var cos = Math.cos(rotation), sin = Math.sin(rotation);
       var cx = canvas.width / 2, cy = canvas.height / 2;
 
-      for (var i = 0; i < N; i++) {
-        var n = nodes[i];
-        var xr = n.x * cos + n.z * sin;
-        var zr = -n.x * sin + n.z * cos;
-        var sc = FOCAL / (CAM_DIST + zr);
+      var proj = new Array(n);
+      for (var i = 0; i < n; i++) {
+        var nd = nodes[i];
+        var xr = nd.x * cos + nd.z * sin;
+        var zr = -nd.x * sin + nd.z * cos;
+        var sc = focal / (camDist + zr);
         var t = (sc - scaleMin) / (scaleMax - scaleMin);
         if (t < 0) t = 0; else if (t > 1) t = 1;
-        proj[i] = { x: cx + xr * sc, y: cy + n.y * sc, scale: sc, t: t };
-        flashes[i] = Math.max(0, flashes[i] - .035);
+        proj[i] = { x: cx + xr * sc, y: cy + nd.y * sc, scale: sc, t: t };
       }
-      order.sort(function (a, b) { return proj[a].scale - proj[b].scale; });
 
-      if (Math.random() < .07) fire(Math.floor(Math.random() * N));
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      /* synapse mesh — brighter & thicker the closer to the viewer, glows when firing */
-      for (var i = 0; i < N; i++) {
-        var nb = adjacency[i];
-        for (var k = 0; k < nb.length; k++) {
-          var j = nb[k];
-          if (j < i) continue;
+      /* starfield, drawn once at fixed brightness */
+      var starCount = Math.floor((canvas.width * canvas.height) / 4200);
+      for (var s = 0; s < starCount; s++) {
+        var sa = Math.min(1, .2 + Math.random() * .675);
+        ctx.beginPath();
+        ctx.arc(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 1.3 + .25, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(228,233,255," + sa.toFixed(3) + ")";
+        ctx.fill();
+      }
+
+      /* synapse mesh — brighter & thicker the closer to the viewer */
+      for (var i = 0; i < n; i++) {
+        for (var j = i + 1; j < n; j++) {
+          var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y, dz = nodes[i].z - nodes[j].z;
+          if (Math.sqrt(dx * dx + dy * dy + dz * dz) >= linkDist) continue;
           var pa = proj[i], pb = proj[j];
           var depth = (pa.t + pb.t) / 2;
-          var boost = Math.max(flashes[i], flashes[j]) * .55;
           ctx.beginPath();
-          ctx.strokeStyle = "rgba(255,110,90," + (.05 + depth * .3 + boost) + ")";
-          ctx.lineWidth = .4 + depth * 1.1 + boost * 1.3;
+          ctx.strokeStyle = "rgba(255,110,90," + (.05 + depth * .3) + ")";
+          ctx.lineWidth = .4 + depth * 1.1;
           ctx.moveTo(pa.x, pa.y);
           ctx.lineTo(pb.x, pb.y);
           ctx.stroke();
         }
       }
 
-      /* electrical impulses travelling along synapses with a glowing trail */
-      for (var p = pulses.length - 1; p >= 0; p--) {
-        var pulse = pulses[p];
-        pulse.t += pulse.speed;
-        if (pulse.t >= 1) { fire(pulse.b); pulses.splice(p, 1); continue; }
-        var pa = proj[pulse.a], pb = proj[pulse.b];
-        var x = pa.x + (pb.x - pa.x) * pulse.t;
-        var y = pa.y + (pb.y - pa.y) * pulse.t;
-        var depth = (pa.t + pb.t) / 2;
-        var rad = 5 + depth * 5;
-        var glow = ctx.createRadialGradient(x, y, 0, x, y, rad);
-        glow.addColorStop(0, "rgba(255,221,195," + (.55 + depth * .4) + ")");
-        glow.addColorStop(1, "rgba(255,100,82,0)");
-        ctx.fillStyle = glow;
-        ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(x, y, 1.3 + depth * 1.1, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(255,240,228," + (.7 + depth * .3) + ")";
-        ctx.fill();
-      }
-
-      /* neurons, drawn back to front — close ones bigger & glowing, far ones small & blurred */
+      /* neurons, drawn back to front — close ones bigger, far ones small & blurred */
+      var order = [];
+      for (var i = 0; i < n; i++) order.push(i);
+      order.sort(function (a, b) { return proj[a].scale - proj[b].scale; });
       for (var oi = 0; oi < order.length; oi++) {
         var i = order[oi];
-        var pr = proj[i], flash = flashes[i];
-        var rr = (1 + pr.t * 2.6) + flash * 3.2;
+        var pr = proj[i];
+        var rr = 1 + pr.t * 2.6;
         ctx.save();
-        if (flash > .05) {
-          ctx.shadowColor = "rgba(255,225,195," + Math.min(1, flash) + ")";
-          ctx.shadowBlur = 8 + flash * 26;
-        } else if (pr.t < .4) {
+        if (pr.t < .4) {
           ctx.filter = "blur(" + ((.4 - pr.t) * 3.4) + "px)";
         } else {
           ctx.shadowColor = "rgba(255,100,82,.8)";
@@ -1533,25 +1248,13 @@ export function renderAnalyzePage() {
         }
         ctx.beginPath();
         ctx.arc(pr.x, pr.y, rr, 0, Math.PI * 2);
-        ctx.fillStyle = flash > .05
-          ? "rgba(255,232,214," + Math.min(1, .4 + flash * .6) + ")"
-          : "rgba(255,110,90," + (.12 + pr.t * .55) + ")";
+        ctx.fillStyle = "rgba(255,110,90," + (.12 + pr.t * .55) + ")";
         ctx.fill();
         ctx.restore();
       }
     }
-    resize(); init(); tick();
-    window.addEventListener("resize", function () { resize(); init(); });
-
-    /* pause heavy rendering while the user is typing, resume shortly after */
-    document.addEventListener("input", function (e) {
-      var tag = e.target && e.target.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA") {
-        typingPause = true;
-        if (resumeTimer) clearTimeout(resumeTimer);
-        resumeTimer = setTimeout(function () { typingPause = false; }, 500);
-      }
-    });
+    draw();
+    window.addEventListener("resize", draw);
   })();
 
   /* analyze */
@@ -1931,32 +1634,12 @@ export function renderAnalyzeBusinessPage() {
     } catch (e) { window.__shiaSessionId = null; }
   })();
 
-  /* 3D animated brain — neurons positioned on a brain silhouette, slowly rotating (light theme) */
+  /* static brain — neurons positioned on a brain silhouette, drawn once (light theme, no animation) */
   (function () {
     var canvas = document.getElementById("nn");
     var ctx = canvas.getContext("2d");
 
-    var N, LINK_DIST, FOCAL, CAM_DIST, RES = 1;
-    var nodes = [], adjacency = [], pulses = [], flashes = [], stars = [];
-    var proj = [], order = [];
-    var rotation = 0, scaleMin = 1, scaleMax = 1;
-
-    var FRAME_INTERVAL = 1000 / 30;
-    var lastFrame = 0;
-    var typingPause = false;
-    var resumeTimer = null;
-
-    function resize() {
-      RES = Math.min(innerWidth, innerHeight) < 640 ? .65 : 1;
-      canvas.width = Math.round(innerWidth * RES);
-      canvas.height = Math.round(innerHeight * RES);
-      N = RES < 1 ? 55 : 75;
-      LINK_DIST = 48 * RES;
-      FOCAL = 420 * RES;
-      CAM_DIST = 480 * RES;
-    }
-
-    function brainPoint() {
+    function brainPoint(res) {
       var side = Math.random() < .5 ? -1 : 1;
       var u = Math.random(), v = Math.random();
       var theta = 2 * Math.PI * u;
@@ -1965,176 +1648,103 @@ export function renderAnalyzeBusinessPage() {
       var ly = Math.cos(phi);
       var lz = Math.sin(phi) * Math.sin(theta);
       if (side * lx < 0) lx *= .3;
-      var rx = 84 * RES, ry = 116 * RES, rz = 124 * RES;
-      return { x: side * 54 * RES + lx * rx, y: ly * ry - 8 * RES, z: lz * rz };
+      var rx = 84 * res, ry = 116 * res, rz = 124 * res;
+      return { x: side * 54 * res + lx * rx, y: ly * ry - 8 * res, z: lz * rz };
     }
 
-    function init() {
-      nodes = [];
-      for (var i = 0; i < N; i++) nodes.push(brainPoint());
+    function draw() {
+      var res = Math.min(innerWidth, innerHeight) < 640 ? .65 : 1;
+      canvas.width = Math.round(innerWidth * res);
+      canvas.height = Math.round(innerHeight * res);
+      var n = res < 1 ? 55 : 75;
+      var linkDist = 48 * res;
+      var focal = 420 * res;
+      var camDist = 480 * res;
 
-      adjacency = [];
-      for (var i = 0; i < N; i++) adjacency.push([]);
-      for (var i = 0; i < N; i++) {
-        for (var j = i + 1; j < N; j++) {
-          var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y, dz = nodes[i].z - nodes[j].z;
-          if (Math.sqrt(dx * dx + dy * dy + dz * dz) < LINK_DIST) {
-            adjacency[i].push(j);
-            adjacency[j].push(i);
-          }
-        }
-      }
+      var nodes = [];
+      for (var i = 0; i < n; i++) nodes.push(brainPoint(res));
 
       var maxR = 0;
-      for (var i = 0; i < N; i++) {
+      for (var i = 0; i < n; i++) {
         var r = Math.sqrt(nodes[i].x * nodes[i].x + nodes[i].z * nodes[i].z);
         if (r > maxR) maxR = r;
       }
-      scaleMin = FOCAL / (CAM_DIST + maxR);
-      scaleMax = FOCAL / (CAM_DIST - maxR);
+      var scaleMin = focal / (camDist + maxR);
+      var scaleMax = focal / (camDist - maxR);
 
-      pulses = [];
-      flashes = new Array(N).fill(0);
-      proj = new Array(N);
-      order = [];
-      for (var i = 0; i < N; i++) order.push(i);
-
-      stars = [];
-      var starCount = Math.floor((canvas.width * canvas.height) / 5200);
-      for (var s = 0; s < starCount; s++) {
-        stars.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height,
-          r: Math.random() * 1.3 + .25,
-          base: .08 + Math.random() * .14,
-          amp: Math.random() * .14,
-          speed: .0007 + Math.random() * .0022,
-          phase: Math.random() * Math.PI * 2
-        });
-      }
-    }
-
-    function drawStars(now) {
-      for (var i = 0; i < stars.length; i++) {
-        var st = stars[i];
-        var a = st.base + st.amp * Math.sin(now * st.speed + st.phase);
-        if (a < 0) a = 0; else if (a > 1) a = 1;
-        ctx.beginPath();
-        ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(150,158,190," + a.toFixed(3) + ")";
-        ctx.fill();
-      }
-    }
-
-    function fire(i) {
-      flashes[i] = 1;
-      if (Math.random() < .85 && adjacency[i].length) {
-        var j = adjacency[i][Math.floor(Math.random() * adjacency[i].length)];
-        pulses.push({ a: i, b: j, t: 0, speed: .022 + Math.random() * .026 });
-      }
-    }
-
-    function tick(now) {
-      now = now || performance.now();
-      requestAnimationFrame(tick);
-      if (typingPause || now - lastFrame < FRAME_INTERVAL) return;
-      lastFrame = now;
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawStars(now);
-
-      rotation += .0028;
+      var rotation = .6;
       var cos = Math.cos(rotation), sin = Math.sin(rotation);
       var cx = canvas.width / 2, cy = canvas.height / 2;
 
-      for (var i = 0; i < N; i++) {
-        var n = nodes[i];
-        var xr = n.x * cos + n.z * sin;
-        var zr = -n.x * sin + n.z * cos;
-        var sc = FOCAL / (CAM_DIST + zr);
+      var proj = new Array(n);
+      for (var i = 0; i < n; i++) {
+        var nd = nodes[i];
+        var xr = nd.x * cos + nd.z * sin;
+        var zr = -nd.x * sin + nd.z * cos;
+        var sc = focal / (camDist + zr);
         var t = (sc - scaleMin) / (scaleMax - scaleMin);
         if (t < 0) t = 0; else if (t > 1) t = 1;
-        proj[i] = { x: cx + xr * sc, y: cy + n.y * sc, scale: sc, t: t };
-        flashes[i] = Math.max(0, flashes[i] - .035);
+        proj[i] = { x: cx + xr * sc, y: cy + nd.y * sc, scale: sc, t: t };
       }
-      order.sort(function (a, b) { return proj[a].scale - proj[b].scale; });
 
-      if (Math.random() < .07) fire(Math.floor(Math.random() * N));
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      /* synapse mesh — soft blue, brighter & thicker the closer to the viewer, glows when firing */
-      for (var i = 0; i < N; i++) {
-        var nb = adjacency[i];
-        for (var k = 0; k < nb.length; k++) {
-          var j = nb[k];
-          if (j < i) continue;
+      /* faint starfield, drawn once at fixed brightness */
+      var starCount = Math.floor((canvas.width * canvas.height) / 5200);
+      for (var s = 0; s < starCount; s++) {
+        var sa = .08 + Math.random() * .21;
+        ctx.beginPath();
+        ctx.arc(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 1.3 + .25, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(150,158,190," + sa.toFixed(3) + ")";
+        ctx.fill();
+      }
+
+      /* synapse mesh — soft blue, brighter & thicker the closer to the viewer */
+      for (var i = 0; i < n; i++) {
+        for (var j = i + 1; j < n; j++) {
+          var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y, dz = nodes[i].z - nodes[j].z;
+          if (Math.sqrt(dx * dx + dy * dy + dz * dz) >= linkDist) continue;
           var pa = proj[i], pb = proj[j];
           var depth = (pa.t + pb.t) / 2;
-          var boost = Math.max(flashes[i], flashes[j]) * .5;
           ctx.beginPath();
-          ctx.strokeStyle = "rgba(37,99,235," + (.03 + depth * .14 + boost) + ")";
-          ctx.lineWidth = .4 + depth * 1.1 + boost * 1.3;
+          ctx.strokeStyle = "rgba(37,99,235," + (.03 + depth * .14) + ")";
+          ctx.lineWidth = .4 + depth * 1.1;
           ctx.moveTo(pa.x, pa.y);
           ctx.lineTo(pb.x, pb.y);
           ctx.stroke();
         }
       }
 
-      /* electrical impulses travelling along synapses with an orange glowing trail */
-      for (var p = pulses.length - 1; p >= 0; p--) {
-        var pulse = pulses[p];
-        pulse.t += pulse.speed;
-        if (pulse.t >= 1) { fire(pulse.b); pulses.splice(p, 1); continue; }
-        var pa = proj[pulse.a], pb = proj[pulse.b];
-        var x = pa.x + (pb.x - pa.x) * pulse.t;
-        var y = pa.y + (pb.y - pa.y) * pulse.t;
-        var depth = (pa.t + pb.t) / 2;
-        var rad = 5 + depth * 5;
-        var glow = ctx.createRadialGradient(x, y, 0, x, y, rad);
-        glow.addColorStop(0, "rgba(249,180,110," + (.65 + depth * .35) + ")");
-        glow.addColorStop(1, "rgba(249,115,22,0)");
-        ctx.fillStyle = glow;
-        ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(x, y, 1.3 + depth * 1.1, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(234,88,12," + (.75 + depth * .25) + ")";
-        ctx.fill();
-      }
-
-      /* neurons, drawn back to front — close ones bigger & glowing, far ones small & blurred */
+      /* neurons, drawn back to front — mostly blue, a few scattered orange */
+      var order = [];
+      for (var i = 0; i < n; i++) order.push(i);
+      order.sort(function (a, b) { return proj[a].scale - proj[b].scale; });
       for (var oi = 0; oi < order.length; oi++) {
         var i = order[oi];
-        var pr = proj[i], flash = flashes[i];
-        var rr = (1 + pr.t * 2.6) + flash * 3.2;
+        var pr = proj[i];
+        var rr = 1 + pr.t * 2.6;
+        var orange = i % 7 === 0;
         ctx.save();
-        if (flash > .05) {
-          ctx.shadowColor = "rgba(249,115,22," + Math.min(1, flash) + ")";
-          ctx.shadowBlur = 6 + flash * 22;
-        } else if (pr.t < .4) {
+        if (pr.t < .4) {
           ctx.filter = "blur(" + ((.4 - pr.t) * 3.4) + "px)";
+        } else if (orange) {
+          ctx.shadowColor = "rgba(249,115,22,.4)";
+          ctx.shadowBlur = (pr.t - .4) * 14;
         } else {
           ctx.shadowColor = "rgba(37,99,235,.35)";
           ctx.shadowBlur = (pr.t - .4) * 14;
         }
         ctx.beginPath();
         ctx.arc(pr.x, pr.y, rr, 0, Math.PI * 2);
-        ctx.fillStyle = flash > .05
-          ? "rgba(249,115,22," + Math.min(1, .35 + flash * .65) + ")"
+        ctx.fillStyle = orange
+          ? "rgba(249,115,22," + (.15 + pr.t * .45) + ")"
           : "rgba(37,99,235," + (.08 + pr.t * .32) + ")";
         ctx.fill();
         ctx.restore();
       }
     }
-    resize(); init(); tick();
-    window.addEventListener("resize", function () { resize(); init(); });
-
-    /* pause heavy rendering while the user is typing, resume shortly after */
-    document.addEventListener("input", function (e) {
-      var tag = e.target && e.target.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA") {
-        typingPause = true;
-        if (resumeTimer) clearTimeout(resumeTimer);
-        resumeTimer = setTimeout(function () { typingPause = false; }, 500);
-      }
-    });
+    draw();
+    window.addEventListener("resize", draw);
   })();
 
   /* page logic */
@@ -2457,32 +2067,12 @@ export function renderDashboardPage({ userId, previews, payments, sprints }) {
     } catch (e) { window.__shiaSessionId = null; }
   })();
 
-    /* 3D animated brain — neurons positioned on a brain silhouette, slowly rotating */
+    /* static brain — neurons positioned on a brain silhouette, drawn once (no animation) */
   (function () {
     var canvas = document.getElementById("nn");
     var ctx = canvas.getContext("2d");
 
-    var N, LINK_DIST, FOCAL, CAM_DIST, RES = 1;
-    var nodes = [], adjacency = [], pulses = [], flashes = [], stars = [];
-    var proj = [], order = [];
-    var rotation = 0, scaleMin = 1, scaleMax = 1;
-
-    var FRAME_INTERVAL = 1000 / 30;
-    var lastFrame = 0;
-    var typingPause = false;
-    var resumeTimer = null;
-
-    function resize() {
-      RES = Math.min(innerWidth, innerHeight) < 640 ? .65 : 1;
-      canvas.width = Math.round(innerWidth * RES);
-      canvas.height = Math.round(innerHeight * RES);
-      N = RES < 1 ? 55 : 75;
-      LINK_DIST = 48 * RES;
-      FOCAL = 420 * RES;
-      CAM_DIST = 480 * RES;
-    }
-
-    function brainPoint() {
+    function brainPoint(res) {
       var side = Math.random() < .5 ? -1 : 1;
       var u = Math.random(), v = Math.random();
       var theta = 2 * Math.PI * u;
@@ -2491,150 +2081,83 @@ export function renderDashboardPage({ userId, previews, payments, sprints }) {
       var ly = Math.cos(phi);
       var lz = Math.sin(phi) * Math.sin(theta);
       if (side * lx < 0) lx *= .3;            /* flatten medial face -> longitudinal fissure */
-      var rx = 84 * RES, ry = 116 * RES, rz = 124 * RES;
-      return { x: side * 54 * RES + lx * rx, y: ly * ry - 8 * RES, z: lz * rz };
+      var rx = 84 * res, ry = 116 * res, rz = 124 * res;
+      return { x: side * 54 * res + lx * rx, y: ly * ry - 8 * res, z: lz * rz };
     }
 
-    function init() {
-      nodes = [];
-      for (var i = 0; i < N; i++) nodes.push(brainPoint());
+    function draw() {
+      var res = Math.min(innerWidth, innerHeight) < 640 ? .65 : 1;
+      canvas.width = Math.round(innerWidth * res);
+      canvas.height = Math.round(innerHeight * res);
+      var n = res < 1 ? 55 : 75;
+      var linkDist = 48 * res;
+      var focal = 420 * res;
+      var camDist = 480 * res;
 
-      adjacency = [];
-      for (var i = 0; i < N; i++) adjacency.push([]);
-      for (var i = 0; i < N; i++) {
-        for (var j = i + 1; j < N; j++) {
-          var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y, dz = nodes[i].z - nodes[j].z;
-          if (Math.sqrt(dx * dx + dy * dy + dz * dz) < LINK_DIST) {
-            adjacency[i].push(j);
-            adjacency[j].push(i);
-          }
-        }
-      }
+      var nodes = [];
+      for (var i = 0; i < n; i++) nodes.push(brainPoint(res));
 
       var maxR = 0;
-      for (var i = 0; i < N; i++) {
+      for (var i = 0; i < n; i++) {
         var r = Math.sqrt(nodes[i].x * nodes[i].x + nodes[i].z * nodes[i].z);
         if (r > maxR) maxR = r;
       }
-      scaleMin = FOCAL / (CAM_DIST + maxR);
-      scaleMax = FOCAL / (CAM_DIST - maxR);
+      var scaleMin = focal / (camDist + maxR);
+      var scaleMax = focal / (camDist - maxR);
 
-      pulses = [];
-      flashes = new Array(N).fill(0);
-      proj = new Array(N);
-      order = [];
-      for (var i = 0; i < N; i++) order.push(i);
-
-      stars = [];
-      var starCount = Math.floor((canvas.width * canvas.height) / 4200);
-      for (var s = 0; s < starCount; s++) {
-        stars.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height,
-          r: Math.random() * 1.3 + .25,
-          base: .2 + Math.random() * .45,
-          amp: Math.random() * .45,
-          speed: .0007 + Math.random() * .0022,
-          phase: Math.random() * Math.PI * 2
-        });
-      }
-    }
-
-    function drawStars(now) {
-      for (var i = 0; i < stars.length; i++) {
-        var st = stars[i];
-        var a = st.base + st.amp * Math.sin(now * st.speed + st.phase);
-        if (a < 0) a = 0; else if (a > 1) a = 1;
-        ctx.beginPath();
-        ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(228,233,255," + a.toFixed(3) + ")";
-        ctx.fill();
-      }
-    }
-
-    function fire(i) {
-      flashes[i] = 1;
-      if (Math.random() < .85 && adjacency[i].length) {
-        var j = adjacency[i][Math.floor(Math.random() * adjacency[i].length)];
-        pulses.push({ a: i, b: j, t: 0, speed: .022 + Math.random() * .026 });
-      }
-    }
-
-    function tick(now) {
-      now = now || performance.now();
-      requestAnimationFrame(tick);
-      if (typingPause || now - lastFrame < FRAME_INTERVAL) return;
-      lastFrame = now;
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawStars(now);
-
-      rotation += .0028;
+      var rotation = .6;
       var cos = Math.cos(rotation), sin = Math.sin(rotation);
       var cx = canvas.width / 2, cy = canvas.height / 2;
 
-      for (var i = 0; i < N; i++) {
-        var n = nodes[i];
-        var xr = n.x * cos + n.z * sin;
-        var zr = -n.x * sin + n.z * cos;
-        var sc = FOCAL / (CAM_DIST + zr);
+      var proj = new Array(n);
+      for (var i = 0; i < n; i++) {
+        var nd = nodes[i];
+        var xr = nd.x * cos + nd.z * sin;
+        var zr = -nd.x * sin + nd.z * cos;
+        var sc = focal / (camDist + zr);
         var t = (sc - scaleMin) / (scaleMax - scaleMin);
         if (t < 0) t = 0; else if (t > 1) t = 1;
-        proj[i] = { x: cx + xr * sc, y: cy + n.y * sc, scale: sc, t: t };
-        flashes[i] = Math.max(0, flashes[i] - .035);
+        proj[i] = { x: cx + xr * sc, y: cy + nd.y * sc, scale: sc, t: t };
       }
-      order.sort(function (a, b) { return proj[a].scale - proj[b].scale; });
 
-      if (Math.random() < .07) fire(Math.floor(Math.random() * N));
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      /* synapse mesh — brighter & thicker the closer to the viewer, glows when firing */
-      for (var i = 0; i < N; i++) {
-        var nb = adjacency[i];
-        for (var k = 0; k < nb.length; k++) {
-          var j = nb[k];
-          if (j < i) continue;
+      /* starfield, drawn once at fixed brightness */
+      var starCount = Math.floor((canvas.width * canvas.height) / 4200);
+      for (var s = 0; s < starCount; s++) {
+        var sa = Math.min(1, .2 + Math.random() * .675);
+        ctx.beginPath();
+        ctx.arc(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 1.3 + .25, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(228,233,255," + sa.toFixed(3) + ")";
+        ctx.fill();
+      }
+
+      /* synapse mesh — brighter & thicker the closer to the viewer */
+      for (var i = 0; i < n; i++) {
+        for (var j = i + 1; j < n; j++) {
+          var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y, dz = nodes[i].z - nodes[j].z;
+          if (Math.sqrt(dx * dx + dy * dy + dz * dz) >= linkDist) continue;
           var pa = proj[i], pb = proj[j];
           var depth = (pa.t + pb.t) / 2;
-          var boost = Math.max(flashes[i], flashes[j]) * .55;
           ctx.beginPath();
-          ctx.strokeStyle = "rgba(255,110,90," + (.05 + depth * .3 + boost) + ")";
-          ctx.lineWidth = .4 + depth * 1.1 + boost * 1.3;
+          ctx.strokeStyle = "rgba(255,110,90," + (.05 + depth * .3) + ")";
+          ctx.lineWidth = .4 + depth * 1.1;
           ctx.moveTo(pa.x, pa.y);
           ctx.lineTo(pb.x, pb.y);
           ctx.stroke();
         }
       }
 
-      /* electrical impulses travelling along synapses with a glowing trail */
-      for (var p = pulses.length - 1; p >= 0; p--) {
-        var pulse = pulses[p];
-        pulse.t += pulse.speed;
-        if (pulse.t >= 1) { fire(pulse.b); pulses.splice(p, 1); continue; }
-        var pa = proj[pulse.a], pb = proj[pulse.b];
-        var x = pa.x + (pb.x - pa.x) * pulse.t;
-        var y = pa.y + (pb.y - pa.y) * pulse.t;
-        var depth = (pa.t + pb.t) / 2;
-        var rad = 5 + depth * 5;
-        var glow = ctx.createRadialGradient(x, y, 0, x, y, rad);
-        glow.addColorStop(0, "rgba(255,221,195," + (.55 + depth * .4) + ")");
-        glow.addColorStop(1, "rgba(255,100,82,0)");
-        ctx.fillStyle = glow;
-        ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(x, y, 1.3 + depth * 1.1, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(255,240,228," + (.7 + depth * .3) + ")";
-        ctx.fill();
-      }
-
-      /* neurons, drawn back to front — close ones bigger & glowing, far ones small & blurred */
+      /* neurons, drawn back to front — close ones bigger, far ones small & blurred */
+      var order = [];
+      for (var i = 0; i < n; i++) order.push(i);
+      order.sort(function (a, b) { return proj[a].scale - proj[b].scale; });
       for (var oi = 0; oi < order.length; oi++) {
         var i = order[oi];
-        var pr = proj[i], flash = flashes[i];
-        var rr = (1 + pr.t * 2.6) + flash * 3.2;
+        var pr = proj[i];
+        var rr = 1 + pr.t * 2.6;
         ctx.save();
-        if (flash > .05) {
-          ctx.shadowColor = "rgba(255,225,195," + Math.min(1, flash) + ")";
-          ctx.shadowBlur = 8 + flash * 26;
-        } else if (pr.t < .4) {
+        if (pr.t < .4) {
           ctx.filter = "blur(" + ((.4 - pr.t) * 3.4) + "px)";
         } else {
           ctx.shadowColor = "rgba(255,100,82,.8)";
@@ -2642,25 +2165,13 @@ export function renderDashboardPage({ userId, previews, payments, sprints }) {
         }
         ctx.beginPath();
         ctx.arc(pr.x, pr.y, rr, 0, Math.PI * 2);
-        ctx.fillStyle = flash > .05
-          ? "rgba(255,232,214," + Math.min(1, .4 + flash * .6) + ")"
-          : "rgba(255,110,90," + (.12 + pr.t * .55) + ")";
+        ctx.fillStyle = "rgba(255,110,90," + (.12 + pr.t * .55) + ")";
         ctx.fill();
         ctx.restore();
       }
     }
-    resize(); init(); tick();
-    window.addEventListener("resize", function () { resize(); init(); });
-
-    /* pause heavy rendering while the user is typing, resume shortly after */
-    document.addEventListener("input", function (e) {
-      var tag = e.target && e.target.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA") {
-        typingPause = true;
-        if (resumeTimer) clearTimeout(resumeTimer);
-        resumeTimer = setTimeout(function () { typingPause = false; }, 500);
-      }
-    });
+    draw();
+    window.addEventListener("resize", draw);
   })();
 </script>
 
