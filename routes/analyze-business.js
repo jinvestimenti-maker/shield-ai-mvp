@@ -42,6 +42,8 @@ async function fetchGoogleMapsData({ businessName, location }) {
 function buildAnalysisPrompt(place, businessInfo) {
   return `You are Shield AI, an expert local business growth analyst. Analyze this business's online presence based on its Google Maps data and return ONLY valid JSON, no markdown.
 
+IMPORTANT: Always respond in Italian. All text fields (score_explanation, punti_di_forza, errori_principali, opportunita, idee_contenuti, next_actions) must be written in Italian, regardless of the language of the input data.
+
 BUSINESS INPUT:
 - Name: ${businessInfo.businessName}
 - Location: ${businessInfo.location}
