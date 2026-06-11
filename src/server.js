@@ -9,6 +9,7 @@ import { GenerationService } from "./generation.js";
 import { validateNormalizedCreatorInput } from "./contracts.js";
 import { AlertingService } from "./alerting.js";
 import analyzeBusinessRouter from "../routes/analyze-business.js";
+import generateAdRouter from "../routes/generate-ad.js";
 import {
   renderAnalyzeBusinessPage,
   renderAnalyzePage,
@@ -170,6 +171,7 @@ app.post(
 app.use(express.json());
 
 app.use("/", analyzeBusinessRouter);
+app.use("/", generateAdRouter);
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });

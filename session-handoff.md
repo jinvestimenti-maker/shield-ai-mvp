@@ -1,21 +1,50 @@
 # Session Handoff
 
 ## Cosa fatto
-- Aggiunta `renderAnalyzeBusinessPage()` in `src/frontend-pages.js`: pagina frontend per `/analyze-business`
-  - Form: input "Nome attività" + "Città" + bottone "Analizza"
-  - Stato di caricamento con messaggi rotanti ("Sto leggendo le recensioni Google…", "Sto analizzando la concorrenza…", ecc.)
-  - Stato risultato: Growth Score in cerchio animato, dati attività (nome, indirizzo, rating, recensioni), sezioni Punti di forza (verde), Errori principali (arancio), Opportunità (blu), Idee contenuti, Prossime azioni
-  - Stato di errore gentile se l'attività non viene trovata, con bottone "Riprova"
-  - Stile: sfondo chiaro, neural network canvas animato (brain 3D ricolorato blu/arancio per tema light), niente card con bordi, separatori a linea sottile, icone Tabler, palette verde/arancio/blu, niente viola
-- Aggiunta rotta `GET /analyze-business` in `src/server.js` (la `POST /analyze-business` esistente in `routes/analyze-business.js` resta invariata)
-- Aggiornata l'analisi `idee_contenuti` resa nel JSON del backend per popolare la sezione "Idee contenuti"
-- Smoke test via curl: `GET /analyze-business` -> 200, `POST /analyze-business` e `/health` ancora funzionanti
+- Nuova feature backend "AI Ad Generator":
+  - `config/adStyles.js`: 3 template di prompt per Gemini 2.5 Flash Image
+    (`floating`, `minimal`, `social`), ognuno con istruzione esplicita di
+    PRESERVARE logo, etichetta e forma del prodotto della foto originale
+  - `routes/generate-ad.js`: nuova rotta `POST /generate-ad`
+    - upload multipart con multer (field `photo`, max 5MB, solo jpg/png,
+      memoria - nessun salvataggio su disco)
+    - campo `style` (floating|minimal|social), validato contro `AD_STYLE_KEYS`
+    - chiama Gemini 2.5 Flash Image (`v1beta/models/gemini-2.5-flash-image:generateContent`,
+      header `x-goog-api-key`, `generationConfig.responseModalities: ["TEXT","IMAGE"]`)
+      usando `process.env.GEMINI_API_KEY`
+    - risponde `{ style, image: { mimeType, base64 } }`
+    - errori gestiti come JSON chiaro via `ApiError` (validation_error,
+      invalid_file_type, file_too_large, config_error, gemini_error,
+      gemini_unreachable, invalid_model_output, rate_limit_exceeded)
+  - Rate limit in memoria: max 3 generazioni/giorno per IP (`Map` in
+    `routes/generate-ad.js`, reset giornaliero su cambio data)
+  - `src/server.js`: aggiunto solo import + `app.use("/", generateAdRouter)`,
+    nessuna rotta esistente toccata, `src/generation.js` non toccato
+  - Aggiunta dipendenza `multer` (`package.json`)
+- Template `floating` riscritto v3 e validato con test reale:
+  fotografia pubblicitaria da studio (vortice liquido interno, splash
+  congelati, ghiaccio, condensa, softbox + rim light, 85mm f/8, color
+  grading freddo), divieto esplicito di glow/aloni/particelle/effetti
+  fantasy, preservazione di logo/etichetta/testi/colori/forma del prodotto
 
-## File modificati
-- `src/frontend-pages.js` (nuova `renderAnalyzeBusinessPage`)
-- `src/server.js` (import + rotta `GET /analyze-business`)
+## Smoke test eseguiti
+- `GET /health` -> 200 ok
+- `POST /generate-ad` senza file -> 400 `validation_error`
+- `POST /generate-ad` con style non valido -> 400 `validation_error`
+- `POST /generate-ad` con file `.txt` (mime non valido) -> 400 `invalid_file_type`
+- `POST /generate-ad` con foto reale + style `floating` (v1, v2, v3 del
+  template) + `GEMINI_API_KEY` valida -> 200 OK, immagini generate e
+  ispezionate visivamente (test-output.png, test-output-2.png,
+  test-output-3.png, non committate)
+
+## File modificati/creati
+- `config/adStyles.js` (nuovo)
+- `routes/generate-ad.js` (nuovo)
+- `src/server.js` (import + `app.use` per la nuova rotta)
+- `package.json` / `package-lock.json` (dipendenza `multer`)
+- `.env` (creato in sessione precedente, contiene `GEMINI_API_KEY`, non committato)
+- `.gitignore` (creato in sessione precedente, include `.env`)
 
 ## Prossimo step
-- Verifica visiva nel browser (non possibile in questo ambiente: manca chromium-cli/Playwright)
-- Aggiungere `OPENAI_API_KEY` e `APIFY_TOKEN` nelle env vars di Render
-- Validare/normalizzare l'output di `/analyze-business` con un contratto in `src/contracts.js`
+- UI/frontend per `/generate-ad` (sessione separata)
+- `OPENAI_API_KEY` e `APIFY_TOKEN` ancora da aggiungere nelle env vars di Render
