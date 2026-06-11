@@ -1453,6 +1453,429 @@ export function renderAnalyzeBusinessPage() {
 </html>`;
 }
 
+export function renderCreateAdPage() {
+  return `<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Crea un Annuncio AI — Shield AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-display@600,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.44.0/dist/tabler-icons.min.css">
+  <style>
+    :root {
+      --bg:  #f7f8fc;
+      --bg2: #ffffff;
+      --ink:  #161a2b;
+      --ink2: #4b5066;
+      --ink3: #9095ab;
+      --line: #e7e9f2;
+      --green:  #16a34a;
+      --orange: #f97316;
+      --blue:   #2563eb;
+      --a1: #ff6452;
+      --a2: #f59e0b;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Plus Jakarta Sans", sans-serif; color: var(--ink); min-height: 100vh;
+      background:
+        radial-gradient(ellipse at 18% 10%, rgba(37,99,235,.07) 0%, transparent 46%),
+        radial-gradient(ellipse at 84% 6%,  rgba(249,115,22,.07) 0%, transparent 42%),
+        radial-gradient(ellipse at 70% 85%, rgba(22,163,74,.06) 0%, transparent 48%),
+        var(--bg);
+    }
+    .page { position: relative; z-index: 1; width: min(880px, 94vw); margin: 0 auto; padding: 2.5rem 0 5rem; }
+
+    /* header */
+    .hdr { display: flex; align-items: center; gap: .75rem; margin-bottom: 2.8rem; }
+    .logo-sq {
+      width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--a1) 0%, var(--a2) 100%);
+      display: grid; place-items: center;
+      font-family: "Clash Display", sans-serif; font-weight: 700; font-size: 1.1rem; color: #fff;
+    }
+    .logo-name { font-family: "Clash Display", sans-serif; font-weight: 700; font-size: 1.25rem; letter-spacing: -.02em; }
+
+    /* hero / form */
+    .hero { padding: 1rem 0 3rem; }
+    .kicker { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--ink3); margin-bottom: .6rem; }
+    .hero-title {
+      font-family: "Clash Display", sans-serif; font-weight: 700;
+      font-size: clamp(1.8rem, 4.5vw, 2.8rem); letter-spacing: -.03em; line-height: 1.1;
+      margin-bottom: .8rem; max-width: 22ch;
+    }
+    .hero-sub { font-size: 1rem; color: var(--ink2); font-weight: 500; max-width: 56ch; margin-bottom: 2.2rem; line-height: 1.6; }
+
+    /* upload zone */
+    .upload-zone {
+      border: 2px dashed var(--line); border-radius: 16px;
+      padding: 2.6rem 1.5rem; text-align: center; cursor: pointer;
+      transition: border-color .15s, background .15s; margin-bottom: 1.4rem;
+    }
+    .upload-zone:hover, .upload-zone.dragover {
+      border-color: var(--blue); background: rgba(37,99,235,.04);
+    }
+    .upload-zone i.upload-icon { font-size: 2.4rem; color: var(--ink3); margin-bottom: .8rem; display: block; }
+    .upload-zone p { margin: .2rem 0; font-weight: 600; }
+    .upload-zone .muted { font-weight: 500; font-size: .85rem; color: var(--ink3); margin-top: .3rem; }
+    .upload-zone img.preview {
+      max-width: 100%; max-height: 320px; border-radius: 12px; display: block; margin: 0 auto;
+    }
+
+    /* hint */
+    .hint {
+      display: flex; align-items: center; gap: .6rem;
+      font-size: .88rem; color: var(--ink2); font-weight: 600;
+      padding: .85rem 1.1rem; background: rgba(249,115,22,.08);
+      border-left: 3px solid var(--orange); border-radius: 0 10px 10px 0;
+      margin-bottom: 2.2rem;
+    }
+    .hint i { color: var(--orange); font-size: 1.15rem; flex-shrink: 0; }
+
+    /* style picker */
+    .style-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1rem; margin-bottom: 1.6rem; }
+    .style-option {
+      display: flex; flex-direction: column; gap: .4rem; align-items: flex-start; text-align: left;
+      border: 1px solid var(--line); border-radius: 14px; padding: 1.1rem 1.2rem;
+      background: var(--bg2); cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s;
+      font: inherit; color: var(--ink);
+    }
+    .style-option:hover { transform: translateY(-1px); }
+    .style-option i { font-size: 1.4rem; color: var(--ink3); }
+    .style-option .style-name { font-weight: 700; font-size: 1rem; }
+    .style-option .style-desc { font-size: .85rem; color: var(--ink2); line-height: 1.4; font-weight: 500; }
+    .style-option.selected {
+      border-color: var(--blue); box-shadow: 0 0 0 2px rgba(37,99,235,.15);
+    }
+    .style-option.selected i { color: var(--blue); }
+
+    /* buttons */
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: .5rem; border: none; cursor: pointer;
+      background: linear-gradient(135deg, var(--a1) 0%, var(--a2) 100%);
+      color: #fff; font-family: "Plus Jakarta Sans", sans-serif; font-weight: 700;
+      font-size: .95rem; padding: .85rem 1.8rem; border-radius: 999px; transition: opacity .15s, transform .15s;
+    }
+    .btn-primary:hover { opacity: .9; transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+    .btn-primary i { font-size: 1.1rem; }
+    .btn-ghost {
+      font-size: .88rem; color: var(--ink3); text-decoration: none; font-weight: 600;
+      background: none; border: none; cursor: pointer; padding: .5rem 0;
+    }
+    .btn-ghost:hover { color: var(--ink); }
+    .gen-hint { font-size: .85rem; color: var(--ink3); font-weight: 500; margin-top: .7rem; }
+
+    /* loading */
+    #loading { display: none; text-align: center; padding: 5rem 0; }
+    .spinner {
+      width: 42px; height: 42px;
+      border: 3px solid var(--line); border-top-color: var(--blue);
+      border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 1.6rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-txt { font-size: 1rem; font-weight: 600; color: var(--ink2); transition: opacity .25s; min-height: 1.5em; }
+    .loading-sub { font-size: .85rem; color: var(--ink3); font-weight: 500; margin-top: .5rem; }
+
+    /* error */
+    .err { color: #dc2626; font-weight: 600; font-size: .9rem; min-height: 1.4rem; margin-top: .6rem; }
+    #result-err { display: none; text-align: center; padding: 4rem 0; }
+    .err-icon { font-size: 2.6rem; color: var(--orange); margin-bottom: 1rem; }
+    .err-title { font-family: "Clash Display", sans-serif; font-weight: 700; font-size: 1.4rem; margin-bottom: .6rem; }
+    .err-body { font-size: .95rem; color: var(--ink2); max-width: 46ch; margin: 0 auto 1.8rem; line-height: 1.6; }
+
+    /* result */
+    #result { display: none; text-align: center; }
+    .result-style-badge {
+      display: inline-flex; align-items: center; gap: .4rem; font-size: .75rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .1em; color: var(--ink3); margin-bottom: 1rem;
+    }
+    .result-img-wrap { margin-bottom: 1.8rem; }
+    #result-img {
+      max-width: 100%; max-height: 640px; border-radius: 16px;
+      box-shadow: 0 8px 30px rgba(22,28,55,.08);
+    }
+    .cta-row { display: flex; align-items: center; justify-content: center; gap: 1.4rem; flex-wrap: wrap; }
+
+    @media (max-width: 600px) {
+      .style-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page">
+
+  <header class="hdr">
+    <div class="logo-sq">S</div>
+    <span class="logo-name">Shield AI</span>
+  </header>
+
+  <section class="hero" id="form-section">
+    <p class="kicker">AI Ad Generator</p>
+    <h1 class="hero-title">Trasforma la foto del tuo prodotto in un annuncio pro</h1>
+    <p class="hero-sub">Carica una foto del prodotto, scegli uno stile e l'AI genera un'immagine pubblicitaria pronta per i tuoi social.</p>
+
+    <div class="upload-zone" id="upload-zone">
+      <input type="file" id="photo-input" accept="image/jpeg,image/png" hidden>
+      <div id="upload-placeholder">
+        <i class="ti ti-photo-up upload-icon"></i>
+        <p>Trascina qui la foto o clicca per selezionarla</p>
+        <p class="muted">JPG o PNG, max 5MB</p>
+      </div>
+      <img id="preview-img" class="preview" style="display:none" alt="Anteprima foto prodotto">
+    </div>
+
+    <p class="hint"><i class="ti ti-info-circle"></i> Usa una foto con etichetta/logo ben visibile per il miglior risultato</p>
+
+    <p class="kicker">Scegli uno stile</p>
+    <div class="style-grid">
+      <button type="button" class="style-option" data-style="floating">
+        <i class="ti ti-droplet"></i>
+        <span class="style-name">Floating</span>
+        <span class="style-desc">Splash dinamici, vortice nel liquido, ghiaccio e sfondo scuro drammatico</span>
+      </button>
+      <button type="button" class="style-option" data-style="minimal">
+        <i class="ti ti-square-rounded"></i>
+        <span class="style-name">Minimal</span>
+        <span class="style-desc">Sfondo chiaro e pulito, ombre morbide, stile elegante</span>
+      </button>
+      <button type="button" class="style-option" data-style="social">
+        <i class="ti ti-brand-instagram"></i>
+        <span class="style-name">Social</span>
+        <span class="style-desc">Contesto lifestyle, luce naturale, colori vivaci per Instagram</span>
+      </button>
+    </div>
+
+    <button class="btn-primary" id="generate-btn"><i class="ti ti-sparkles"></i> Genera</button>
+    <p class="gen-hint">La generazione richiede circa 10-30 secondi.</p>
+    <p id="form-err" class="err"></p>
+  </section>
+
+  <section id="loading">
+    <div class="spinner"></div>
+    <p class="loading-txt" id="loading-msg">Sto analizzando la tua foto…</p>
+    <p class="loading-sub">Può richiedere fino a 30 secondi, non chiudere la pagina.</p>
+  </section>
+
+  <section id="result-err">
+    <p class="err-icon"><i class="ti ti-mood-sad" id="result-err-icon"></i></p>
+    <p class="err-title" id="result-err-title">Non siamo riusciti a generare l'annuncio</p>
+    <p class="err-body" id="result-err-msg">—</p>
+    <button class="btn-primary" id="retry-btn"><i class="ti ti-refresh"></i> Riprova</button>
+  </section>
+
+  <div id="result">
+    <p class="result-style-badge" id="result-style-badge"><i class="ti ti-sparkles"></i> Stile</p>
+    <div class="result-img-wrap">
+      <img id="result-img" alt="Annuncio generato dall'AI">
+    </div>
+    <div class="cta-row">
+      <a class="btn-primary" id="download-btn" download="annuncio-shield-ai.png"><i class="ti ti-download"></i> Scarica</a>
+      <button class="btn-ghost" id="new-gen-btn"><i class="ti ti-arrow-back-up"></i> Genera un altro annuncio</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  /* session id */
+  (function () {
+    try {
+      var k = "shia.session.id", v = localStorage.getItem(k);
+      if (!v) { v = "sess_" + Date.now() + "_" + Math.floor(Math.random() * 1e9); localStorage.setItem(k, v); }
+      window.__shiaSessionId = v;
+    } catch (e) { window.__shiaSessionId = null; }
+  })();
+
+  /* page logic */
+  (function () {
+    var formSection = document.getElementById("form-section");
+    var loading      = document.getElementById("loading");
+    var resultErr    = document.getElementById("result-err");
+    var result       = document.getElementById("result");
+    var formErr      = document.getElementById("form-err");
+
+    var uploadZone        = document.getElementById("upload-zone");
+    var photoInput        = document.getElementById("photo-input");
+    var uploadPlaceholder = document.getElementById("upload-placeholder");
+    var previewImg        = document.getElementById("preview-img");
+    var styleOptions      = Array.prototype.slice.call(document.querySelectorAll(".style-option"));
+    var generateBtn       = document.getElementById("generate-btn");
+    var loadingMsg        = document.getElementById("loading-msg");
+    var resultImg         = document.getElementById("result-img");
+    var resultBadge       = document.getElementById("result-style-badge");
+    var downloadBtn       = document.getElementById("download-btn");
+    var newGenBtn         = document.getElementById("new-gen-btn");
+    var retryBtn          = document.getElementById("retry-btn");
+    var resultErrTitle    = document.getElementById("result-err-title");
+    var resultErrMsg      = document.getElementById("result-err-msg");
+    var resultErrIcon     = document.getElementById("result-err-icon");
+
+    var MAX_SIZE = 5 * 1024 * 1024;
+    var ALLOWED_TYPES = ["image/jpeg", "image/png"];
+    var STYLE_LABELS = { floating: "Floating", minimal: "Minimal", social: "Social" };
+
+    var selectedFile = null;
+    var selectedStyle = null;
+
+    function showState(state) {
+      formSection.style.display = state === "form" ? "block" : "none";
+      loading.style.display     = state === "loading" ? "block" : "none";
+      resultErr.style.display   = state === "error" ? "block" : "none";
+      result.style.display      = state === "result" ? "block" : "none";
+    }
+
+    function setFile(file) {
+      if (ALLOWED_TYPES.indexOf(file.type) === -1) {
+        formErr.textContent = "Formato non valido: usa un'immagine JPG o PNG.";
+        return;
+      }
+      if (file.size > MAX_SIZE) {
+        formErr.textContent = "L'immagine supera il limite di 5MB.";
+        return;
+      }
+      formErr.textContent = "";
+      selectedFile = file;
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        previewImg.src = e.target.result;
+        previewImg.style.display = "block";
+        uploadPlaceholder.style.display = "none";
+      };
+      reader.readAsDataURL(file);
+    }
+
+    uploadZone.addEventListener("click", function () { photoInput.click(); });
+    photoInput.addEventListener("change", function () {
+      if (photoInput.files && photoInput.files[0]) setFile(photoInput.files[0]);
+    });
+    ["dragenter", "dragover"].forEach(function (evt) {
+      uploadZone.addEventListener(evt, function (e) {
+        e.preventDefault(); e.stopPropagation();
+        uploadZone.classList.add("dragover");
+      });
+    });
+    ["dragleave", "drop"].forEach(function (evt) {
+      uploadZone.addEventListener(evt, function (e) {
+        e.preventDefault(); e.stopPropagation();
+        uploadZone.classList.remove("dragover");
+      });
+    });
+    uploadZone.addEventListener("drop", function (e) {
+      var files = e.dataTransfer && e.dataTransfer.files;
+      if (files && files[0]) setFile(files[0]);
+    });
+
+    styleOptions.forEach(function (opt) {
+      opt.addEventListener("click", function () {
+        styleOptions.forEach(function (o) { o.classList.remove("selected"); });
+        opt.classList.add("selected");
+        selectedStyle = opt.dataset.style;
+        formErr.textContent = "";
+      });
+    });
+
+    var loadingMessages = [
+      "Sto analizzando la tua foto…",
+      "Sto applicando lo stile scelto…",
+      "Sto generando l'immagine con l'AI…",
+      "Ultimi ritocchi all'annuncio…"
+    ];
+    var msgTimer = null;
+
+    function startMessages() {
+      var i = 0;
+      loadingMsg.textContent = loadingMessages[0];
+      loadingMsg.style.opacity = 1;
+      msgTimer = setInterval(function () {
+        i = (i + 1) % loadingMessages.length;
+        loadingMsg.style.opacity = 0;
+        setTimeout(function () {
+          loadingMsg.textContent = loadingMessages[i];
+          loadingMsg.style.opacity = 1;
+        }, 250);
+      }, 4000);
+    }
+    function stopMessages() {
+      if (msgTimer) { clearInterval(msgTimer); msgTimer = null; }
+    }
+
+    function showError(code, message) {
+      if (code === "rate_limit_exceeded") {
+        resultErrIcon.className = "ti ti-clock-exclamation";
+        resultErrTitle.textContent = "Limite giornaliero raggiunto";
+        resultErrMsg.textContent = message || "Hai raggiunto il limite di 3 generazioni gratuite per oggi. Riprova domani.";
+        retryBtn.style.display = "none";
+      } else {
+        resultErrIcon.className = "ti ti-mood-sad";
+        resultErrTitle.textContent = "Non siamo riusciti a generare l'annuncio";
+        resultErrMsg.textContent = message || "Si è verificato un errore imprevisto. Riprova tra qualche istante.";
+        retryBtn.style.display = "inline-flex";
+      }
+      showState("error");
+    }
+
+    function runGenerate() {
+      formErr.textContent = "";
+      if (!selectedFile) {
+        formErr.textContent = "Carica prima una foto del prodotto.";
+        return;
+      }
+      if (!selectedStyle) {
+        formErr.textContent = "Scegli uno stile per il tuo annuncio.";
+        return;
+      }
+
+      showState("loading");
+      startMessages();
+
+      var formData = new FormData();
+      formData.append("photo", selectedFile);
+      formData.append("style", selectedStyle);
+
+      fetch("/generate-ad", { method: "POST", body: formData })
+        .then(function (res) {
+          return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+        })
+        .then(function (r) {
+          stopMessages();
+          if (!r.ok) {
+            var err = (r.data && r.data.error) || {};
+            showError(err.code, err.message);
+            return;
+          }
+          var img = (r.data && r.data.image) || {};
+          var style = (r.data && r.data.style) || selectedStyle;
+          var dataUrl = "data:" + (img.mimeType || "image/png") + ";base64," + img.base64;
+          resultImg.src = dataUrl;
+          resultBadge.innerHTML = '<i class="ti ti-sparkles"></i> Stile ' + (STYLE_LABELS[style] || style);
+          downloadBtn.href = dataUrl;
+          downloadBtn.download = "shield-ai-ad-" + style + ".png";
+          showState("result");
+        })
+        .catch(function () {
+          stopMessages();
+          showError(null, "Errore di connessione. Controlla la rete e riprova.");
+        });
+    }
+
+    generateBtn.addEventListener("click", runGenerate);
+    retryBtn.addEventListener("click", function () { showState("form"); });
+    newGenBtn.addEventListener("click", function () { showState("form"); });
+
+    showState("form");
+  })();
+</script>
+
+</body>
+</html>`;
+}
+
 export function renderDashboardPage({ userId, previews, payments, sprints }) {
   return `<!doctype html>
 <html lang="en">

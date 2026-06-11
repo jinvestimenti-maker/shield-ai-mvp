@@ -13,6 +13,7 @@ import generateAdRouter from "../routes/generate-ad.js";
 import {
   renderAnalyzeBusinessPage,
   renderAnalyzePage,
+  renderCreateAdPage,
   renderDashboardPage,
   renderGeneratePage,
   renderLandingPage,
@@ -197,6 +198,10 @@ app.get("/analyze", (_req, res) => {
 
 app.get("/analyze-business", (_req, res) => {
   res.type("html").send(renderAnalyzeBusinessPage());
+});
+
+app.get("/create-ad", (_req, res) => {
+  res.type("html").send(renderCreateAdPage());
 });
 
 app.get("/generate", (_req, res) => {

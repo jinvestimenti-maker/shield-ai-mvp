@@ -45,6 +45,34 @@
 - `.env` (creato in sessione precedente, contiene `GEMINI_API_KEY`, non committato)
 - `.gitignore` (creato in sessione precedente, include `.env`)
 
+## Sessione successiva: UI per /generate-ad
+- Nuova pagina `GET /create-ad` (`renderCreateAdPage()` in `src/frontend-pages.js`,
+  rotta registrata in `src/server.js`), stile coerente con `/analyze-business`:
+  - Upload foto con anteprima (drag & drop + click), validazione tipo (jpg/png)
+    e dimensione (max 5MB) lato client
+  - Selettore dei 3 stili (floating, minimal, social) con nome, descrizione
+    breve e selezione evidenziata
+  - Avviso "Usa una foto con etichetta/logo ben visibile per il miglior
+    risultato"
+  - Bottone "Genera" con stato di caricamento (messaggi rotanti, ~10-30s)
+  - Risultato mostrato grande con bottone "Scarica" (download del base64
+    come immagine) e bottone per generare di nuovo
+  - Gestione errori leggibile, incluso il caso `rate_limit_exceeded`
+    ("Limite giornaliero raggiunto", senza bottone "riprova")
+  - Chiama `POST /generate-ad` esistente (FormData: `photo` + `style`)
+- Corretto anche il link CDN Tabler Icons (era `@tabler/icons-webfont@2.47.0`,
+  404 -> ora `@tabler/icons-webfont@3.44.0`, verificato 200 OK e classi icona
+  presenti). Stesso problema esiste anche in `renderAnalyzeBusinessPage`
+  (non toccato in questa sessione, fuori scope).
+- Verificato via curl: `GET /create-ad` -> 200, tutti gli ID/elementi attesi
+  presenti nell'HTML. Verifica visiva via screenshot headless Chrome: layout,
+  colori e testi corretti; le icone Tabler non risultavano visibili negli
+  screenshot, ma lo stesso accade su `/analyze-business` -> limite
+  dell'ambiente headless (font non caricati), non un bug della pagina.
+
 ## Prossimo step
-- UI/frontend per `/generate-ad` (sessione separata)
+- Test end-to-end completo di `/create-ad` in un browser reale (upload,
+  selezione stile, generazione, download, stati di errore)
 - `OPENAI_API_KEY` e `APIFY_TOKEN` ancora da aggiungere nelle env vars di Render
+- Decidere cosa fare di `test-output.png`, `test-output-2.png`,
+  `test-output-3.png` (non committati, in root del progetto)
