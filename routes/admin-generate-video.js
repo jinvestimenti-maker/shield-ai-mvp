@@ -21,7 +21,7 @@ function ensureFalConfigured() {
 }
 
 // HTTP Basic Auth gate: username is irrelevant, password must match ADMIN_KEY.
-function requireAdmin(req, res, next) {
+export function requireAdmin(req, res, next) {
   const adminKey = process.env.ADMIN_KEY;
   if (!adminKey) {
     next(new ApiError(500, "config_error", "ADMIN_KEY non configurata"));

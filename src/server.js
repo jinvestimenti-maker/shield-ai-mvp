@@ -11,6 +11,7 @@ import { AlertingService } from "./alerting.js";
 import analyzeBusinessRouter from "../routes/analyze-business.js";
 import generateAdRouter from "../routes/generate-ad.js";
 import adminGenerateVideoRouter from "../routes/admin-generate-video.js";
+import adminStudioRouter from "../routes/admin-studio.js";
 import {
   renderAnalyzeBusinessPage,
   renderAnalyzePage,
@@ -175,6 +176,7 @@ app.use(express.json({ limit: "12mb" }));
 app.use("/", analyzeBusinessRouter);
 app.use("/", generateAdRouter);
 app.use("/", adminGenerateVideoRouter);
+app.use("/", adminStudioRouter);
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
