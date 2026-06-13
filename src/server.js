@@ -10,6 +10,7 @@ import { validateNormalizedCreatorInput } from "./contracts.js";
 import { AlertingService } from "./alerting.js";
 import analyzeBusinessRouter from "../routes/analyze-business.js";
 import generateAdRouter from "../routes/generate-ad.js";
+import adminGenerateVideoRouter from "../routes/admin-generate-video.js";
 import {
   renderAnalyzeBusinessPage,
   renderAnalyzePage,
@@ -169,10 +170,11 @@ app.post(
   })
 );
 
-app.use(express.json());
+app.use(express.json({ limit: "12mb" }));
 
 app.use("/", analyzeBusinessRouter);
 app.use("/", generateAdRouter);
+app.use("/", adminGenerateVideoRouter);
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
